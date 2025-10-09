@@ -3,23 +3,21 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
 const Register = () => {
-  const { register } = useAuth();
+  const { register, loading } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    whatsappNumber: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    institute: '',
+    whatsappNumber: '',
     studentId: '',
+    institute: '',
     degreeProgram: '',
     level: ''
   });
   const [studentIdFile, setStudentIdFile] = useState(null);
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
   // Common institutes in Sri Lanka
   const institutes = [
@@ -64,254 +62,248 @@ const Register = () => {
     }));
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
       setStudentIdFile(file);
-    } else {
-      setMessage('Please upload a valid image file for Student ID');
+    } else if (file) {
+      setError('Please upload a valid image file for Student ID verification');
     }
   };
-
-  const capturePhoto = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      // This would typically open a camera interface
-      // For now, we'll just trigger the file input
-      document.getElementById('studentIdFile').click();
-    } catch (error) {
-      setMessage('Camera access denied. Please use file upload instead.');
-    }
-  };
-
-  // Simplified registration - no OTP required
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
     setMessage('');
 
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setMessage('Passwords do not match');
-      setLoading(false);
+    // Validate required fields
+    const requiredFields = ['firstName', 'lastName', 'email', 'password', 'institute', 'degreeProgram', 'level'];
+    const missingFields = requiredFields.filter(field => !formData[field]?.trim());
+    
+    if (missingFields.length > 0) {
+      setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
       return;
     }
 
+    // Validate required file
     if (!studentIdFile) {
-      setMessage('Please upload your Student ID document for verification');
-      setLoading(false);
+      setError('Please upload your Student ID document for verification');
       return;
-    }
-
-    // Check for required fields
-    const requiredFields = ['firstName', 'lastName', 'email', 'password', 'whatsappNumber', 'institute', 'studentId', 'degreeProgram', 'level'];
-    for (let field of requiredFields) {
-      if (!formData[field]) {
-        setMessage(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-        setLoading(false);
-        return;
-      }
     }
 
     try {
-      console.log('🚀 Starting registration process...');
-      const registrationData = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key !== 'confirmPassword') {
-          registrationData.append(key, formData[key]);
-        }
-      });
-      registrationData.append('studentIdFile', studentIdFile);
-
-      console.log('📝 Registration data prepared:', {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+      // Map frontend form fields to backend expected fields
+      const backendData = {
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
-        hasFile: !!studentIdFile
-      });
+        password: formData.password,
+        university: formData.institute,
+        degree: formData.degreeProgram,
+        year: parseInt(formData.level.charAt(0)) || 1 // Extract year number from level
+      };
 
-      console.log('📡 Calling register function...');
-      await register(registrationData);
-      setSuccess(true);
-      setMessage('🎉 Registration submitted successfully! Your account is pending admin approval. Check back soon!');
-    } catch (error) {
-      setMessage(error.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
+      console.log('Sending registration data:', backendData);
+
+      const result = await register(backendData);
+
+      if (result.success) {
+        if (result.requiresApproval) {
+          setMessage('🎉 Registration successful! Your account is pending admin approval. You will receive an email notification once your account is approved and you can start using the platform.');
+          // Don't redirect immediately for pending approval
+          setTimeout(() => {
+            window.location.href = '/login?message=registration-pending';
+          }, 5000);
+        } else {
+          setMessage('Registration successful! Redirecting to login...');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+        }
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     }
   };
 
   return (
-    <div className="auth-form-container p-8 shadow-xl rounded-xl max-w-2xl mx-auto">
+    <div className="auth-form-container p-8 shadow-xl rounded-xl max-w-4xl mx-auto mt-8 mb-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-primary mb-2">Create New Account</h2>
         <p className="text-secondary text-sm">Join The Online Kuppiya community</p>
       </div>
-      
+
       {message && (
-        <div className={`text-center mb-6 p-4 rounded-lg ${
-          message.includes('successfully') ? 'bg-success text-green border-success' : 'bg-error text-red border-error'
-        }`}>
+        <div className="text-center mb-6 p-4 rounded-lg bg-success text-green border-success">
           <div className="flex items-center justify-center gap-2">
-            {message.includes('successfully') ? '✅' : '❌'}
+            ✅
             <span className="font-medium">{message}</span>
           </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Personal Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            className="form-control"
-            type="text"
-            name="firstName"
-            placeholder="First Name *"
-            value={formData.firstName}
-            onChange={handleInputChange}
-            required
-          />
-          <input
-            className="form-control"
-            type="text"
-            name="lastName"
-            placeholder="Last Name *"
-            value={formData.lastName}
-            onChange={handleInputChange}
-            required
-          />
+      {error && (
+        <div className="text-center mb-6 p-4 rounded-lg bg-error text-red border-error">
+          <div className="flex items-center justify-center gap-2">
+            ❌
+            <span className="font-medium">{error}</span>
+          </div>
         </div>
+      )}
 
-        {/* WhatsApp Number */}
-        <input
-          className="form-control"
-          type="tel"
-          name="whatsappNumber"
-          placeholder="WhatsApp Number (with country code) *"
-          value={formData.whatsappNumber}
-          onChange={handleInputChange}
-          required
-        />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Personal Information */}
+        <div className="space-y-4">
+          <div className="text-lg font-semibold text-gray-700 border-b pb-2">Personal Information</div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <input
+              className="form-control"
+              type="text"
+              name="firstName"
+              placeholder="First Name *"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              required
+            />
+            <input
+              className="form-control"
+              type="text"
+              name="lastName"
+              placeholder="Last Name *"
+              value={formData.lastName}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
 
-        {/* Email */}
-        <input
-          className="form-control"
-          type="email"
-          name="email"
-          placeholder="Email Address *"
-          value={formData.email}
-          onChange={handleInputChange}
-          required
-        />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <input
+              className="form-control"
+              type="email"
+              name="email"
+              placeholder="Email Address *"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+            />
+            <input
+              className="form-control"
+              type="tel"
+              name="whatsappNumber"
+              placeholder="WhatsApp Number (with country code) *"
+              value={formData.whatsappNumber}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
 
-        {/* Password Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input
             className="form-control"
             type="password"
             name="password"
-            placeholder="Password (min 6 chars) *"
+            placeholder="Password (min 6 characters) *"
             value={formData.password}
             onChange={handleInputChange}
             required
             minLength="6"
           />
-          <input
-            className="form-control"
-            type="password"
-            name="confirmPassword"
-            placeholder="Confirm Password *"
-            value={formData.confirmPassword}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        {/* Institute */}
-        <select
-          className="form-control"
-          name="institute"
-          value={formData.institute}
-          onChange={handleInputChange}
-          required
-        >
-          <option value="">Select Institute *</option>
-          {institutes.map(institute => (
-            <option key={institute} value={institute}>{institute}</option>
-          ))}
-        </select>
-
-        {/* Student ID File Upload */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Student ID Document *
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="studentIdFile"
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="form-control flex-1"
-              required
-            />
-            <button
-              type="button"
-              onClick={capturePhoto}
-              className="btn btn-secondary px-4"
-            >
-              📸 Take Photo
-            </button>
-          </div>
-          {studentIdFile && (
-            <div className="flex items-center gap-2 text-green text-sm font-medium">
-              <span className="flex items-center justify-center w-5 h-5 bg-success rounded-full text-xs">✓</span>
-              File uploaded: {studentIdFile.name}
-            </div>
-          )}
         </div>
 
         {/* Academic Information */}
-        <input
-          className="form-control"
-          type="text"
-          name="studentId"
-          placeholder="Student ID Number *"
-          value={formData.studentId}
-          onChange={handleInputChange}
-          required
-        />
+        <div className="space-y-4">
+          <div className="text-lg font-semibold text-gray-700 border-b pb-2">Academic Information</div>
+          
+          <select
+            className="form-control"
+            name="institute"
+            value={formData.institute}
+            onChange={handleInputChange}
+            required
+          >
+            <option value="">Select Institute *</option>
+            {institutes.map(institute => (
+              <option key={institute} value={institute}>{institute}</option>
+            ))}
+          </select>
 
-        <input
-          className="form-control"
-          type="text"
-          name="degreeProgram"
-          placeholder="Degree Program *"
-          value={formData.degreeProgram}
-          onChange={handleInputChange}
-          required
-        />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <input
+              className="form-control"
+              type="text"
+              name="studentId"
+              placeholder="Student ID Number *"
+              value={formData.studentId}
+              onChange={handleInputChange}
+              required
+            />
+            <input
+              className="form-control"
+              type="text"
+              name="degreeProgram"
+              placeholder="Degree Program *"
+              value={formData.degreeProgram}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
 
-        <select
-          className="form-control"
-          name="level"
-          value={formData.level}
-          onChange={handleInputChange}
-          required
-        >
-          <option value="">Select Academic Level *</option>
-          {levels.map(level => (
-            <option key={level} value={level}>{level}</option>
-          ))}
-        </select>
+          <select
+            className="form-control"
+            name="level"
+            value={formData.level}
+            onChange={handleInputChange}
+            required
+          >
+            <option value="">Select Academic Level *</option>
+            {levels.map(level => (
+              <option key={level} value={level}>{level}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Student ID Document Upload - Required for Verification */}
+        <div className="space-y-4">
+          <div className="text-lg font-semibold text-gray-700 border-b pb-2">Identity Verification</div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Student ID Document * (Required for verification)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="form-control flex-1"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => document.querySelector('input[type="file"]').click()}
+                className="btn btn-secondary px-4 whitespace-nowrap"
+              >
+                📸 Take Photo
+              </button>
+            </div>
+            {studentIdFile && (
+              <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+                <span className="flex items-center justify-center w-5 h-5 bg-green-100 rounded-full text-xs">✓</span>
+                Document uploaded: {studentIdFile.name}
+              </div>
+            )}
+            <p className="text-xs text-gray-500">
+              Please upload a clear photo of your student ID card for verification purposes
+            </p>
+          </div>
+        </div>
 
         <button 
           type="submit" 
           className="btn btn-primary w-full mt-6" 
-          disabled={loading || success}
+          disabled={loading}
         >
-          {loading ? 'Submitting Registration...' : success ? 'Registration Submitted ✓' : 'Submit Registration'}
+          {loading ? 'Submitting Registration...' : 'Submit Registration'}
         </button>
       </form>
 

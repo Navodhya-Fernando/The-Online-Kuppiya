@@ -10,8 +10,14 @@ export const uploadResource = (formData) => {
 };
 
 // --- CRUD Operations ---
-export const fetchAllResources = (params = {}) => {
-  return api.get(RESOURCE_URL, { params });
+export const fetchAllResources = async (params = {}) => {
+  const response = await api.get(RESOURCE_URL, { params });
+  // The backend returns { success: true, resources: [...], pagination: {...} }
+  // But the useApi hook expects just the data array
+  return {
+    ...response,
+    data: response.data.resources || []
+  };
 };
 
 export const fetchResourceById = (resourceId) => {

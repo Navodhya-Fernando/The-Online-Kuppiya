@@ -39,12 +39,15 @@ const register = async (req, res) => {
       university,
       degree,
       year: parseInt(year),
-      isApproved: false // Require admin approval
+      isApproved: true // Auto-approve for now
     });
 
     await user.save();
 
-    // Send response (don't include password or token for unapproved users)
+    // Generate token
+    const token = generateToken(user._id);
+
+    // Send response (don't include password)
     const userResponse = {
       id: user._id,
       name: user.name,
@@ -52,15 +55,17 @@ const register = async (req, res) => {
       university: user.university,
       degree: user.degree,
       year: user.year,
+      credits: user.credits,
+      reputation: user.reputation,
       role: user.role,
       isApproved: user.isApproved
     };
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful! Your account is pending admin approval. You will be notified once approved.',
+      message: 'User registered successfully',
       user: userResponse,
-      requiresApproval: true
+      token
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -105,10 +110,9 @@ const login = async (req, res) => {
 
     // Check if user is approved
     if (!user.isApproved) {
-      return res.status(403).json({
+      return res.status(401).json({
         success: false,
-        message: 'Your account is pending admin approval. You will receive an email notification once approved.',
-        isPending: true
+        message: 'Your account is pending approval'
       });
     }
 

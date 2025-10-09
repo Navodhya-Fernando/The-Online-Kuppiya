@@ -27,14 +27,18 @@ import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
 function App() {
   const { isDarkMode } = useSettings();
   
-  const backgroundClass = isDarkMode ? 'bg-background-page text-primary-text' : 'bg-light-bg text-light-text';
-  
   return (
-    <div className={`flex flex-col min-h-screen font-sans ${backgroundClass}`}>
+    <div 
+      className="flex flex-col min-h-screen font-sans"
+      style={{
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)'
+      }}
+    >
       
       <Header /> 
       
-      <main className="container mx-auto p-4 flex-grow">
+      <main className="flex-grow" style={{ backgroundColor: 'var(--bg-primary)' }}>
         
         <Routes>
           <Route path="/" element={<ResourceList />} />

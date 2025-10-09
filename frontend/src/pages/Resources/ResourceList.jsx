@@ -27,13 +27,13 @@ const ResourceListPage = () => {
   };
 
   const sortResources = (list) => {
-    if (!list) return [];
+    if (!list || !Array.isArray(list)) return [];
     
     const mutableList = list.map(r => ({
       ...r,
-      score: r.upvotes - r.downvotes,
+      score: (r.upvotes || 0) - (r.downvotes || 0),
       date: new Date(r.createdAt),
-      popularity: r.downloadCount + r.upvotes,
+      popularity: (r.downloadCount || 0) + (r.upvotes || 0),
       type: r.resourceType || 'Lecture Note',
     }));
 
@@ -54,10 +54,10 @@ const ResourceListPage = () => {
     return sorted;
   };
 
-  const filteredResources = sortResources(resources)?.filter(resource => {
-    const termMatch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                     resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                     resource.courseCode.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredResources = sortResources(resources).filter(resource => {
+    const termMatch = resource.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                     resource.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                     resource.courseCode?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const typeMatch = resourceType === 'All' || resource.type === resourceType;
 
@@ -91,55 +91,144 @@ const ResourceListPage = () => {
   const stats = getResourceStats();
 
   return (
-    <div className="min-h-screen bg-primary">
+    <div 
+      className="min-h-screen"
+      style={{ backgroundColor: 'var(--bg-primary)' }}
+    >
       <div className="container mx-auto px-4 py-8">
         
         {/* Header Section */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-tertiary rounded-2xl mb-4">
+          <div 
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+            style={{ backgroundColor: 'var(--bg-tertiary)' }}
+          >
             <span className="text-3xl">📚</span>
           </div>
-          <h1 className="text-4xl font-bold text-primary mb-4">Academic Resources</h1>
-          <p className="text-secondary text-lg max-w-2xl mx-auto">
+          <h1 
+            className="text-4xl font-bold mb-4"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            Academic Resources
+          </h1>
+          <p 
+            className="text-lg max-w-2xl mx-auto"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             Access quality study materials shared by students, for students
           </p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-secondary rounded-xl p-4 border border-light text-center">
-            <div className="text-2xl font-bold text-blue">{stats.total}</div>
-            <div className="text-xs text-muted">Total Resources</div>
+          <div 
+            className="rounded-xl p-4 border text-center"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: 'var(--border-light)'
+            }}
+          >
+            <div 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--accent-blue)' }}
+            >
+              {stats.total}
+            </div>
+            <div 
+              className="text-xs"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Total Resources
+            </div>
           </div>
-          <div className="bg-secondary rounded-xl p-4 border border-light text-center">
-            <div className="text-2xl font-bold text-green">{stats.pastPapers}</div>
-            <div className="text-xs text-muted">Past Papers</div>
+          <div 
+            className="rounded-xl p-4 border text-center"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: 'var(--border-light)'
+            }}
+          >
+            <div 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--accent-green)' }}
+            >
+              {stats.pastPapers}
+            </div>
+            <div 
+              className="text-xs"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Past Papers
+            </div>
           </div>
-          <div className="bg-secondary rounded-xl p-4 border border-light text-center">
-            <div className="text-2xl font-bold text-purple">{stats.notes}</div>
-            <div className="text-xs text-muted">Lecture Notes</div>
+          <div 
+            className="rounded-xl p-4 border text-center"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: 'var(--border-light)'
+            }}
+          >
+            <div 
+              className="text-2xl font-bold"
+              style={{ color: 'var(--accent-purple)' }}
+            >
+              {stats.notes}
+            </div>
+            <div 
+              className="text-xs"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Lecture Notes
+            </div>
           </div>
-          <div className="bg-secondary rounded-xl p-4 border border-light text-center">
-            <div className="text-2xl font-bold text-orange">{stats.assignments}</div>
-            <div className="text-xs text-muted">Assignments</div>
+          <div 
+            className="rounded-xl p-4 border text-center"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: 'var(--border-light)'
+            }}
+          >
+            <div 
+              className="text-2xl font-bold"
+              style={{ color: '#F59E0B' }}
+            >
+              {stats.assignments}
+            </div>
+            <div 
+              className="text-xs"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Assignments
+            </div>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-secondary rounded-xl p-6 mb-8 border border-light">
+        <div 
+          className="rounded-xl p-6 mb-8 border"
+          style={{
+            backgroundColor: 'var(--bg-secondary)',
+            borderColor: 'var(--border-light)'
+          }}
+        >
           <div className="flex flex-col md:flex-row gap-4">
             
             {/* Search Bar */}
             <div className="flex-1 relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-muted">🔍</span>
+                <span style={{ color: 'var(--text-muted)' }}>🔍</span>
               </div>
               <input 
                 type="text"
                 placeholder="Search by title, description, or course code..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-primary pl-10 w-full"
+                className="form-control pl-10 w-full"
+                style={{
+                  backgroundColor: 'var(--bg-tertiary)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-primary)'
+                }}
               />
             </div>
 

@@ -13,17 +13,14 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
-        
         if (storedUser) {
             try {
                 setUser(JSON.parse(storedUser));
             } catch (error) {
-                console.error("Error parsing stored user data. Clearing storage:", error);
                 localStorage.removeItem('user');
                 localStorage.removeItem('token');
             }
         }
-        
         setLoading(false);
     }, []);
 
@@ -32,38 +29,22 @@ export const AuthProvider = ({ children }) => {
         const { user, token } = response.data;
         
         localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('token', token); 
-        
+        localStorage.setItem('token', token);
         setUser(user);
         return response;
     };
 
     const register = async (userData) => {
-        try {
-            const response = await registerUser(userData);
-            // Don't automatically log in users who need approval
-            if (response.data.requiresApproval) {
-                return {
-                    success: true,
-                    requiresApproval: true,
-                    message: response.data.message,
-                    user: response.data.user
-                };
-            } else if (response.data.token) {
-                // Auto-login for approved users
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-                localStorage.setItem('token', response.data.token);
-                setUser(response.data.user);
-                return { success: true, requiresApproval: false };
-            }
-            return { success: true };
-        } catch (error) {
-            throw error;
-        }
+        const response = await registerUser(userData);
+        return response;
     };
 
     const logout = async () => {
-        await logoutUser();
+        try {
+            await logoutUser();
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         setUser(null);
@@ -72,15 +53,15 @@ export const AuthProvider = ({ children }) => {
     const value = {
         user,
         isAuthenticated: !!user,
-        loading,
         login,
         register,
         logout,
+        loading
     };
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
 };

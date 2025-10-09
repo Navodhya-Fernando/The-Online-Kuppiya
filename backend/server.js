@@ -11,24 +11,17 @@ initializeSentry();
 const Sentry = getSentryInstance();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3003;
 
 // Add Sentry request handler as the first middleware (only if enabled)
 if (isSentryEnabled()) {
     app.use(Sentry.Handlers.requestHandler());
 }
 
-const resourceRoutes = require('./routes/resource.route'); 
-const authRoutes = require('./routes/auth.route'); 
-const questionRoutes = require('./routes/question.route');
-const leaderboardRoutes = require('./routes/leaderboard.route');
-
-connectDB(); 
-
-// CORS configuration - Allow all origins for development
+// CORS configuration
 app.use(cors({
-    origin: true,
-    credentials: true
+  origin: ['http://localhost:3000', 'http://localhost:3003', 'http://127.0.0.1:5173', 'http://localhost:5173'],
+  credentials: true
 }));
 
 // Session middleware for OTP storage
@@ -42,18 +35,37 @@ app.use(session({
     }
 }));
 
-app.use(express.json()); 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Serve uploaded files
-app.use('/api/uploads', express.static(path.join(__dirname, 'uploads'))); 
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Routes
+const authRoutes = require('./routes/auth.route');
+const resourceRoutes = require('./routes/resource.route');
+const questionRoutes = require('./routes/question.route');
+const leaderboardRoutes = require('./routes/leaderboard.route');
+
+// Connect to Database
+connectDB();
 
 app.get('/', (req, res) => {
-    res.send('Server is running for The Online Kuppiya!');
+  res.json({ 
+    message: 'The Online Kuppiya API is running!',
+    version: '1.0.0',
+    description: 'A unified platform for Sri Lankan university students to share resources and collaborate',
+    endpoints: {
+      auth: '/api/auth',
+      resources: '/api/resources', 
+      questions: '/api/questions',
+      leaderboard: '/api/leaderboard'
+    }
+  });
 });
 
-app.use('/api/resources', resourceRoutes); 
 app.use('/api/auth', authRoutes);
+app.use('/api/resources', resourceRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 
@@ -64,9 +76,19 @@ if (isSentryEnabled()) {
 
 app.use(errorHandler);
 
-app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running on port: ${port}`);
-    console.log(`Server accessible at: http://localhost:${port}`);
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
+});
+
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 The Online Kuppiya server running on port ${PORT}`);
+    console.log(`🌐 API Base URL: http://localhost:${PORT}`);
+    console.log(`📚 Ready to serve Sri Lankan university students!`);
 }).on('error', (err) => {
-    console.error('Server failed to start:', err);
+    console.error('❌ Server failed to start:', err);
 });

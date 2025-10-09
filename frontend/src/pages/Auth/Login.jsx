@@ -18,7 +18,10 @@ const LoginPage = () => {
 
 
   return (
-    <div className="auth-page container flex justify-center items-center my-10"> 
+    <div 
+      className="auth-page container mx-auto flex justify-center items-center min-h-screen py-10"
+      style={{ backgroundColor: 'var(--bg-primary)' }}
+    > 
       <Login />
     </div>
   );

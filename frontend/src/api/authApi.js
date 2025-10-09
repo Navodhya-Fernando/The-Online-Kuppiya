@@ -3,10 +3,9 @@ import api from './axios';
 const AUTH_URL = '/auth';
 
 export const registerUser = (userData) => {
-  // userData is now FormData for file upload
   return api.post(`${AUTH_URL}/register`, userData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      'Content-Type': 'application/json',
     },
   });
 };
@@ -17,10 +16,6 @@ export const loginUser = (credentials) => {
 
 export const logoutUser = () => {
   return api.get(`${AUTH_URL}/logout`);
-};
-
-export const getCurrentUser = () => {
-  return api.get(`${AUTH_URL}/me`);
 };
 
 // OTP functions removed - using student ID verification instead
