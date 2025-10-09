@@ -8,6 +8,9 @@ router.post('/register', authController.registerUser);
 router.post('/login', authController.loginUser);
 router.get('/logout', authController.logoutUser);
 
+// Test route for debugging
+router.post('/test-register', authController.testRegister);
+
 // Protected routes
 router.get('/me', protect, authController.getCurrentUser);
 

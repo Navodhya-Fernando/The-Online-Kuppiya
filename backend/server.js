@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const session = require('express-session');
 const path = require('path');
 const { connectDB } = require('./config/index');
@@ -13,6 +14,12 @@ const questionRoutes = require('./routes/question.route');
 const leaderboardRoutes = require('./routes/leaderboard.route');
 
 connectDB(); 
+
+// CORS configuration - Allow all origins for development
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
 
 // Session middleware for OTP storage
 app.use(session({
@@ -42,6 +49,9 @@ app.use('/api/leaderboard', leaderboardRoutes);
 
 app.use(errorHandler);
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`Server running on port: ${port}`);
+    console.log(`Server accessible at: http://localhost:${port}`);
+}).on('error', (err) => {
+    console.error('Server failed to start:', err);
 });

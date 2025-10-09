@@ -124,11 +124,24 @@ exports.registerUser = [
                 return res.status(400).json({ message: 'Please add all required fields' });
             }
 
+            console.log('📁 File upload status:', {
+                hasFile: !!req.file,
+                fileInfo: req.file ? {
+                    fieldname: req.file.fieldname,
+                    originalname: req.file.originalname,
+                    size: req.file.size,
+                    location: req.file.location,
+                    key: req.file.key
+                } : 'No file'
+            });
+
             if (!req.file) {
                 return res.status(400).json({ message: 'Student ID file is required' });
             }
 
             // OTP verification removed - Student ID verification provides sufficient authentication
+
+            console.log('🔍 Checking for existing user with:', { email, whatsappNumber, studentId });
 
             // Check if user exists
             const userExists = await User.findOne({ 
@@ -136,10 +149,13 @@ exports.registerUser = [
             });
 
             if (userExists) {
+                console.log('⚠️ User already exists:', userExists.email);
                 return res.status(400).json({ 
                     message: 'User with this email, WhatsApp number, or Student ID already exists' 
                 });
             }
+
+            console.log('✅ No existing user found, proceeding with creation');
 
             const user = await User.create({
                 firstName,
@@ -173,8 +189,12 @@ exports.registerUser = [
                 }
             });
         } catch (error) {
-            console.error('Registration error:', error);
-            res.status(500).json({ message: 'Registration failed. Please try again.' });
+            console.error('Registration error:', error.message);
+            console.error('Full error:', error);
+            res.status(500).json({ 
+                message: 'Registration failed. Please try again.',
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
         }
     }
 ];
@@ -379,6 +399,31 @@ exports.rejectUser = async (req, res) => {
         res.json({ message: 'User rejected successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Failed to reject user' });
+    }
+};
+
+// @desc    Test user creation (for debugging)
+// @route   POST /api/auth/test-register
+exports.testRegister = async (req, res) => {
+    try {
+        const user = await User.create({
+            firstName: 'Test',
+            lastName: 'User',
+            email: 'test-debug@example.com',
+            password: 'password123',
+            whatsappNumber: '+94771234567',
+            institute: 'NIBM',
+            studentId: 'TEST001',
+            studentIdFile: 'test-file-path',
+            degreeProgram: 'Test Program',
+            level: '1st Year',
+            approvalStatus: 'pending'
+        });
+        
+        res.status(201).json({ message: 'Test user created', userId: user._id });
+    } catch (error) {
+        console.error('Test registration error:', error);
+        res.status(500).json({ message: error.message });
     }
 };
 
