@@ -49,10 +49,18 @@ export const AuthProvider = ({ children }) => {
 
     // Function to handle user registration
     const register = async (userData) => {
-        const response = await registerUser(userData);
-        // For the new flow, we don't auto-login as the user needs approval
-        // Just return the response which contains the registration status
-        return response; 
+        console.log('🔄 AuthContext: register function called');
+        try {
+            console.log('📤 AuthContext: calling registerUser API...');
+            const response = await registerUser(userData);
+            console.log('✅ AuthContext: registerUser successful', response);
+            // For the new flow, we don't auto-login as the user needs approval
+            // Just return the response which contains the registration status
+            return response; 
+        } catch (error) {
+            console.error('❌ AuthContext: register error:', error);
+            throw error;
+        }
     };
 
     // Function to handle user logout

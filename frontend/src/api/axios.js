@@ -1,15 +1,13 @@
 import axios from 'axios';
 
 // Create a custom Axios instance
-const api = axios.create({
-  baseURL: '/api', 
-  headers: {
-    'Content-Type': 'application/json',
-  },
+const axiosInstance = axios.create({
+  baseURL: 'http://localhost:5000/api',
+  timeout: 10000,
 });
 
 // ADDED: Request Interceptor to attach JWT token to all requests
-api.interceptors.request.use((config) => {
+axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     // Attach the token as a Bearer token
@@ -20,4 +18,4 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-export default api;
+export default axiosInstance;

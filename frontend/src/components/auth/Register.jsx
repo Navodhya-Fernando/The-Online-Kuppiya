@@ -115,6 +115,7 @@ const Register = () => {
     }
 
     try {
+      console.log('🚀 Starting registration process...');
       const registrationData = new FormData();
       Object.keys(formData).forEach(key => {
         if (key !== 'confirmPassword') {
@@ -123,6 +124,14 @@ const Register = () => {
       });
       registrationData.append('studentIdFile', studentIdFile);
 
+      console.log('📝 Registration data prepared:', {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        hasFile: !!studentIdFile
+      });
+
+      console.log('📡 Calling register function...');
       await register(registrationData);
       setSuccess(true);
       setMessage('🎉 Registration submitted successfully! Your account is pending admin approval. Check back soon!');

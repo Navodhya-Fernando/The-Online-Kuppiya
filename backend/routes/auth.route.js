@@ -4,6 +4,7 @@ const authController = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth.middleware');
 
 // Public routes
+router.get('/test', authController.testEndpoint);
 router.post('/register', authController.registerUser);
 router.post('/login', authController.loginUser);
 router.get('/logout', authController.logoutUser);

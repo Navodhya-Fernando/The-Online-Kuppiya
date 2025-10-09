@@ -6,6 +6,7 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 const aws = require('aws-sdk');
 const path = require('path');
+const fs = require('fs');
 
 // Check if S3 configuration is available
 const hasS3Config = process.env.AWS_S3_BUCKET_NAME && 
@@ -57,7 +58,6 @@ if (hasS3Config) {
     // Local file storage fallback
     console.log('⚠️  S3 not configured, using local storage for student IDs');
     
-    const fs = require('fs');
     const uploadDir = 'uploads/student-ids/';
     
     // Create directory if it doesn't exist
@@ -100,11 +100,24 @@ const generateToken = (id) => {
 
 
 
+// TEST endpoint to verify connection works
+exports.testEndpoint = (req, res) => {
+    console.log('✅ TEST ENDPOINT HIT - Basic connection works!');
+    res.json({ message: 'Backend connection successful!' });
+};
+
 // @desc    Register new user
 // @route   POST /api/auth/register
 exports.registerUser = [
-    upload.single('studentIdFile'),
+    // Remove multer temporarily to test without file upload
+    // upload.single('studentIdFile'),
     async (req, res) => {
+        console.log('🔥 REGISTRATION ENDPOINT HIT!');
+        console.log('📋 Request method:', req.method);
+        console.log('📋 Request headers:', req.headers);
+        console.log('📋 Request body keys:', Object.keys(req.body || {}));
+        console.log('📋 Has file?:', !!req.file);
+        
         try {
             const {
                 firstName,
@@ -117,6 +130,15 @@ exports.registerUser = [
                 degreeProgram,
                 level
             } = req.body;
+            
+            console.log('📝 Extracted form data:', {
+                firstName,
+                lastName,
+                email: email ? email.substring(0, 5) + '...' : 'undefined',
+                hasPassword: !!password,
+                institute,
+                studentId
+            });
 
             // Validation
             if (!firstName || !lastName || !whatsappNumber || !email || !password || 
@@ -124,20 +146,15 @@ exports.registerUser = [
                 return res.status(400).json({ message: 'Please add all required fields' });
             }
 
-            console.log('📁 File upload status:', {
+            console.log('📁 File upload status (temporarily disabled):', {
                 hasFile: !!req.file,
-                fileInfo: req.file ? {
-                    fieldname: req.file.fieldname,
-                    originalname: req.file.originalname,
-                    size: req.file.size,
-                    location: req.file.location,
-                    key: req.file.key
-                } : 'No file'
+                fileInfo: req.file ? 'File present' : 'No file (OK for testing)'
             });
 
-            if (!req.file) {
-                return res.status(400).json({ message: 'Student ID file is required' });
-            }
+            // Temporarily disable file requirement for testing
+            // if (!req.file) {
+            //     return res.status(400).json({ message: 'Student ID file is required' });
+            // }
 
             // OTP verification removed - Student ID verification provides sufficient authentication
 
@@ -165,7 +182,7 @@ exports.registerUser = [
                 password,
                 institute,
                 studentId,
-                studentIdFile: hasS3Config ? req.file.location : req.file.path, // S3 URL or local path
+                studentIdFile: req.file ? (hasS3Config ? req.file.location : req.file.path) : 'temp-no-file', // Temporary for testing
                 degreeProgram,
                 level,
                 emailVerified: false, // Will be verified through admin approval process
@@ -189,11 +206,15 @@ exports.registerUser = [
                 }
             });
         } catch (error) {
-            console.error('Registration error:', error.message);
-            console.error('Full error:', error);
+            console.error('🚨 REGISTRATION ERROR CAUGHT!');
+            console.error('🚨 Error message:', error.message);
+            console.error('🚨 Error stack:', error.stack);
+            console.error('🚨 Full error object:', error);
+            
             res.status(500).json({ 
                 message: 'Registration failed. Please try again.',
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
             });
         }
     }
