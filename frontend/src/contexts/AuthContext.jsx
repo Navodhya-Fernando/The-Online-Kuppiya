@@ -17,9 +17,19 @@ export const AuthProvider = ({ children }) => {
     // Check for user/token in local storage on initial load
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
+        
+        // CRITICAL FIX: Use try-catch to safely parse JSON and prevent app crash
         if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (error) {
+                // If stored data is corrupt (e.g., the string "undefined"), clear it
+                console.error("Error parsing stored user data. Clearing storage:", error);
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+            }
         }
+        
         setLoading(false);
     }, []);
 
@@ -40,8 +50,9 @@ export const AuthProvider = ({ children }) => {
     // Function to handle user registration
     const register = async (userData) => {
         const response = await registerUser(userData);
-        // Typically logs the user in automatically after successful registration
-        return login(userData); 
+        // For the new flow, we don't auto-login as the user needs approval
+        // Just return the response which contains the registration status
+        return response; 
     };
 
     // Function to handle user logout

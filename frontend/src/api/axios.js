@@ -8,4 +8,16 @@ const api = axios.create({
   },
 });
 
-export default api
+// ADDED: Request Interceptor to attach JWT token to all requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    // Attach the token as a Bearer token
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+export default api;
