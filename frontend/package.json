@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "description": "Frontend for The Online Kuppiya - A unified platform for Sri Lankan university students",
   "type": "module",
+  "license": "ISC",
+  "author": "Navodhya Fernando",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
