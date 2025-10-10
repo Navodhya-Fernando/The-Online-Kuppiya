@@ -69,6 +69,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 
+// Serve static files (uploaded documents)
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Add Sentry error handler before other error handlers (only if enabled)
 if (isSentryEnabled()) {
     app.use(Sentry.Handlers.errorHandler());
