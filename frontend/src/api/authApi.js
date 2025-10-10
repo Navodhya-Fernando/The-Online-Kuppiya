@@ -19,7 +19,7 @@ export const logoutUser = async () => {
 };
 
 // Password reset functions
-export export const forgotPassword = (method, identifier) => {
+export const forgotPassword = (method, identifier) => {
   return api.post(`${AUTH_URL}/forgot-password`, { method, identifier });
 };
 
