@@ -15,7 +15,6 @@ const Register = () => {
     degreeProgram: '',
     level: ''
   });
-  const [studentIdFile, setStudentIdFile] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -39,7 +38,8 @@ const Register = () => {
     'SLIIT - Sri Lanka Institute of Information Technology',
     'NSBM Green University',
     'APIIT Sri Lanka',
-    'IIT - Informatics Institute of Technology'
+    'IIT - Informatics Institute of Technology',
+    'Other',
   ];
 
   // Academic levels
@@ -62,32 +62,17 @@ const Register = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-      setStudentIdFile(file);
-    } else if (file) {
-      setError('Please select a valid image file for Student ID verification');
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setMessage('');
 
-    // Validate required fields
+    // Validate required fields (file check removed)
     const requiredFields = ['firstName', 'lastName', 'email', 'password', 'institute', 'degreeProgram', 'level'];
     const missingFields = requiredFields.filter(field => !formData[field]?.trim());
     
     if (missingFields.length > 0) {
       setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
-      return;
-    }
-
-    // Validate required file
-    if (!studentIdFile) {
-      setError('Please provide your Student ID document for verification');
       return;
     }
 
@@ -262,41 +247,7 @@ const Register = () => {
           </select>
         </div>
 
-        {/* Student ID Document Upload - Required for Verification */}
-        <div className="space-y-4">
-          <div className="text-lg font-semibold text-gray-700 border-b pb-2">Identity Verification</div>
-          
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Student ID Document * (Required for verification)
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="form-control flex-1"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => document.querySelector('input[type="file"]').click()}
-                className="btn btn-secondary px-4 whitespace-nowrap"
-              >
-                📸 Take Photo
-              </button>
-            </div>
-            {studentIdFile && (
-              <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
-                <span className="flex items-center justify-center w-5 h-5 bg-green-100 rounded-full text-xs">✓</span>
-                Document uploaded: {studentIdFile.name}
-              </div>
-            )}
-            <p className="text-xs text-gray-500">
-              Please upload a clear photo of your student ID card for verification purposes
-            </p>
-          </div>
-        </div>
+        {/* Student ID Document Upload - This section is removed */}
 
         <button 
           type="submit" 
