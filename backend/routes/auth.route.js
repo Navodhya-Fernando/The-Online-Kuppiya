@@ -11,9 +11,11 @@ router.post('/login', login);
 router.get('/profile', authenticateToken, profile);
 router.put('/profile', authenticateToken, updateProfile);
 
-// Admin routes
+// Admin route to get pending users
+
+// Admin routes for user approval/rejection
 router.get('/pending-users', authenticateToken, getPendingUsers);
-router.put('/approve/:userId', authenticateToken, approveUser);
-router.delete('/reject/:userId', authenticateToken, rejectUser);
+router.put('/approve/:id', authenticateToken, approveUser);
+router.delete('/reject/:id', authenticateToken, rejectUser);
 
 module.exports = router;

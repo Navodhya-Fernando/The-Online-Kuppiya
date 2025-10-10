@@ -45,6 +45,9 @@
   --radius-2xl: 1.5rem;
   --radius-full: 9999px;
   
+  --border-radius: var(--radius-md);
+  --primary-color: var(--accent-blue);
+  
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;

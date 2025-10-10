@@ -274,6 +274,7 @@ const getPendingUsers = async (req, res) => {
   }
 };
 
+
 // Approve User (Admin Only)
 const approveUser = async (req, res) => {
   try {
@@ -281,30 +282,12 @@ const approveUser = async (req, res) => {
     if (!req.user || req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
-
-    const { userId } = req.params;
-
-    // Find and update user
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { isApproved: true },
-      { new: true }
-    );
-
+    const userId = req.params.id;
+    const user = await User.findByIdAndUpdate(userId, { isApproved: true }, { new: true });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-
-    res.json({ 
-      success: true, 
-      message: 'User approved successfully', 
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        isApproved: user.isApproved
-      }
-    });
+    res.json({ success: true, message: 'User approved successfully', user });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to approve user', error: error.message });
   }
@@ -317,20 +300,12 @@ const rejectUser = async (req, res) => {
     if (!req.user || req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
-
-    const { userId } = req.params;
-
-    // Find and delete user (rejection means removal)
+    const userId = req.params.id;
     const user = await User.findByIdAndDelete(userId);
-
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-
-    res.json({ 
-      success: true, 
-      message: 'User rejected and removed successfully'
-    });
+    res.json({ success: true, message: 'User rejected and deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to reject user', error: error.message });
   }

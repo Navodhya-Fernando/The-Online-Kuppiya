@@ -55,10 +55,10 @@ const AdminUserApprovals = () => {
 
   if (!user || (user.role !== 'admin' && user.role !== 'moderator')) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <h2 className="text-xl font-bold text-red-800 mb-2">Access Denied</h2>
-          <p className="text-red-600">You don't have permission to access this page.</p>
+      <div className="container">
+        <div className="alert alert-error text-center">
+          <h2 className="text-xl font-bold mb-2">Access Denied</h2>
+          <p>You don't have permission to access this page.</p>
         </div>
       </div>
     );
@@ -66,77 +66,85 @@ const AdminUserApprovals = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="spinner-border" role="status">
+      <div className="container">
+        <div className="loading-modern">
+          <div className="spinner" role="status">
             <span className="sr-only">Loading...</span>
           </div>
-          <p className="mt-2">Loading pending users...</p>
+          <p>Loading pending users...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">User Registration Approvals</h1>
+    <div className="container py-8">
+      <div className="modern-header mb-8">
+        <div className="header-content">
+          <h1 className="modern-title">User Registration Approvals</h1>
+          <p className="modern-subtitle">Review and approve or reject pending user registrations</p>
+        </div>
+      </div>
       
       {message && (
-        <div className={`mb-4 p-4 rounded ${
-          message.includes('success') ? 'bg-green-50 text-green-800 border border-green-200' : 
-          'bg-red-50 text-red-800 border border-red-200'
+        <div className={`mb-6 ${
+          message.includes('success') ? 'alert alert-success' : 'alert alert-error'
         }`}>
           {message}
         </div>
       )}
 
       {!Array.isArray(pendingUsers) || pendingUsers.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <p className="text-gray-600">No pending user registrations.</p>
+        <div className="empty-modern">
+          <div className="empty-icon">👥</div>
+          <h3>No Pending Registrations</h3>
+          <p>All user registrations have been processed.</p>
         </div>
       ) : (
-        <div className="grid gap-6">
+        <div className="questions-modern">
           {pendingUsers.map((pendingUser) => (
-            <div key={pendingUser._id} className="bg-white shadow-lg rounded-lg border border-gray-200 p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div key={pendingUser._id} className="card p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* User Information */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                    {pendingUser.firstName} {pendingUser.lastName}
+                <div className="lg:col-span-2">
+                  <h3 className="text-xl font-semibold mb-4 text-primary">
+                    {pendingUser.name || `${pendingUser.firstName} ${pendingUser.lastName}`}
                   </h3>
                   
-                  <div className="space-y-2 text-sm">
-                    <div><strong>Email:</strong> {pendingUser.email}</div>
-                    <div><strong>WhatsApp:</strong> {pendingUser.whatsappNumber}</div>
-                    <div><strong>Institute:</strong> {pendingUser.institute}</div>
-                    <div><strong>Student ID:</strong> {pendingUser.studentId}</div>
-                    <div><strong>Degree Program:</strong> {pendingUser.degreeProgram}</div>
-                    <div><strong>Academic Level:</strong> {pendingUser.level}</div>
-                    <div><strong>Registered:</strong> {new Date(pendingUser.createdAt).toLocaleDateString()}</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div><strong>Email:</strong> <span className="text-secondary">{pendingUser.email}</span></div>
+                    <div><strong>University:</strong> <span className="text-secondary">{pendingUser.university}</span></div>
+                    <div><strong>Degree:</strong> <span className="text-secondary">{pendingUser.degree}</span></div>
+                    <div><strong>Year:</strong> <span className="text-secondary">{pendingUser.year}</span></div>
+                    <div><strong>Registered:</strong> <span className="text-secondary">{new Date(pendingUser.createdAt).toLocaleDateString()}</span></div>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col space-y-4">
-                  <button
-                    onClick={() => viewStudentId(pendingUser.studentIdFile)}
-                    className="btn btn-secondary w-full"
-                  >
-                    📄 View Student ID Document
-                  </button>
+                <div className="flex flex-col gap-3">
+                  {pendingUser.studentIdFile && (
+                    <button
+                      onClick={() => viewStudentId(pendingUser.studentIdFile)}
+                      className="btn-minimal w-full"
+                    >
+                      📄 View Document
+                    </button>
+                  )}
                   
                   <button
                     onClick={() => handleApproveUser(pendingUser._id)}
-                    className="btn btn-success w-full"
+                    className="btn-minimal-primary w-full"
+                    style={{ background: 'var(--accent-green)', borderColor: 'var(--accent-green)' }}
                   >
-                    ✅ Approve User
+                    ✅ Approve
                   </button>
                   
                   <button
                     onClick={() => setSelectedUser(pendingUser)}
-                    className="btn btn-danger w-full"
+                    className="btn-minimal w-full"
+                    style={{ background: 'var(--accent-red)', borderColor: 'var(--accent-red)', color: 'white' }}
                   >
-                    ❌ Reject User
+                    ❌ Reject
                   </button>
                 </div>
               </div>
@@ -148,17 +156,17 @@ const AdminUserApprovals = () => {
       {/* Rejection Modal */}
       {selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">
-              Reject User: {selectedUser.firstName} {selectedUser.lastName}
+          <div className="ask-question-card w-full max-w-md mx-4">
+            <h3 className="page-title text-xl mb-4">
+              Reject User: {selectedUser.name || `${selectedUser.firstName} ${selectedUser.lastName}`}
             </h3>
             
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="form-field mb-6">
+              <label className="field-label">
                 Rejection Reason:
               </label>
               <textarea
-                className="form-control"
+                className="field-textarea"
                 rows="4"
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
@@ -167,19 +175,20 @@ const AdminUserApprovals = () => {
               />
             </div>
             
-            <div className="flex space-x-3">
+            <div className="form-actions">
               <button
                 onClick={() => {
                   setSelectedUser(null);
                   setRejectionReason('');
                 }}
-                className="btn btn-secondary flex-1"
+                className="btn-secondary flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleRejectUser(selectedUser._id)}
-                className="btn btn-danger flex-1"
+                className="btn-primary flex-1"
+                style={{ background: 'var(--accent-red)' }}
                 disabled={!rejectionReason.trim()}
               >
                 Reject User

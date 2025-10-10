@@ -35,11 +35,11 @@ export const getPendingUsers = () => {
 };
 
 export const approveUser = (userId) => {
-  return api.put(`${AUTH_URL}/approve-user/${userId}`);
+  return api.put(`${AUTH_URL}/approve/${userId}`);
 };
 
 export const rejectUser = (userId, reason) => {
-  return api.put(`${AUTH_URL}/reject-user/${userId}`, { reason });
+  return api.delete(`${AUTH_URL}/reject/${userId}`, { data: { reason } });
 };
 
 export const getUserProfile = () => {
