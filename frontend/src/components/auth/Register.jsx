@@ -12,13 +12,14 @@ const Register = () => {
     whatsappNumber: '',
     studentId: '',
     institute: '',
+    otherInstitute: '', // New state for specifying 'Other'
     degreeProgram: '',
     level: ''
   });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // Common institutes in Sri Lanka
+  // Expanded list of Sri Lankan institutes
   const institutes = [
     'NIBM - National Institute of Business Management',
     'University of Colombo',
@@ -35,11 +36,16 @@ const Register = () => {
     'Wayamba University of Sri Lanka',
     'University of the Visual & Performing Arts',
     'Open University of Sri Lanka',
+    'Uva Wellassa University',
+    'Ocean University of Sri Lanka (OCUSL)',
     'SLIIT - Sri Lanka Institute of Information Technology',
     'NSBM Green University',
     'APIIT Sri Lanka',
     'IIT - Informatics Institute of Technology',
-    'Other',
+    'Esoft Metro Campus',
+    'KDU - General Sir John Kotelawala Defence University',
+    'CINEC Campus',
+    'Other' // Added "Other" option
   ];
 
   // Academic levels
@@ -56,6 +62,7 @@ const Register = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -67,7 +74,17 @@ const Register = () => {
     setError('');
     setMessage('');
 
-    // Validate required fields (file check removed)
+    // Determine the actual university name based on selection
+    let finalUniversity = formData.institute;
+    if (formData.institute === 'Other') {
+      if (!formData.otherInstitute.trim()) {
+        setError('Please specify the name of your university/institute.');
+        return;
+      }
+      finalUniversity = formData.otherInstitute.trim();
+    }
+    
+    // Validate required fields
     const requiredFields = ['firstName', 'lastName', 'email', 'password', 'institute', 'degreeProgram', 'level'];
     const missingFields = requiredFields.filter(field => !formData[field]?.trim());
     
@@ -82,9 +99,9 @@ const Register = () => {
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
         password: formData.password,
-        university: formData.institute,
+        university: finalUniversity, // Using the processed university name
         degree: formData.degreeProgram,
-        year: parseInt(formData.level.charAt(0)) || 1 // Extract year number from level
+        year: parseInt(formData.level.charAt(0)) || 1 
       };
 
       console.log('Sending registration data:', backendData);
@@ -94,7 +111,6 @@ const Register = () => {
       if (result.success) {
         if (result.requiresApproval) {
           setMessage('🎉 Registration successful! Your account is pending admin approval. You will receive an email notification once your account is approved and you can start using the platform.');
-          // Don't redirect immediately for pending approval
           setTimeout(() => {
             window.location.href = '/login?message=registration-pending';
           }, 5000);
@@ -110,6 +126,8 @@ const Register = () => {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     }
   };
+
+  const isOtherSelected = formData.institute === 'Other';
 
   return (
     <div className="auth-form-container p-8 shadow-xl rounded-xl max-w-4xl mx-auto mt-8 mb-8">
@@ -176,10 +194,9 @@ const Register = () => {
               className="form-control"
               type="tel"
               name="whatsappNumber"
-              placeholder="WhatsApp Number (with country code) *"
+              placeholder="WhatsApp Number (optional)"
               value={formData.whatsappNumber}
               onChange={handleInputChange}
-              required
             />
           </div>
 
@@ -211,16 +228,28 @@ const Register = () => {
               <option key={institute} value={institute}>{institute}</option>
             ))}
           </select>
+          
+          {/* Conditional Input for "Other" University */}
+          {isOtherSelected && (
+            <input
+              className="form-control"
+              type="text"
+              name="otherInstitute"
+              placeholder="Specify University/Institute Name *"
+              value={formData.otherInstitute}
+              onChange={handleInputChange}
+              required
+            />
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <input
               className="form-control"
               type="text"
               name="studentId"
-              placeholder="Student ID Number *"
+              placeholder="Student ID Number (optional)"
               value={formData.studentId}
               onChange={handleInputChange}
-              required
             />
             <input
               className="form-control"
@@ -246,8 +275,6 @@ const Register = () => {
             ))}
           </select>
         </div>
-
-        {/* Student ID Document Upload - This section is removed */}
 
         <button 
           type="submit" 
