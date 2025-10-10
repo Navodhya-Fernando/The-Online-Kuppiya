@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+/backend/node_modules
+/frontend/node_modules
+package-lock.json
+/backend/package-lock.json
+/frontend/package-lock.json
+
+# Environment Files
+.env
+.env.*
+.dopplerrc
+*.log
+
+# Build Outputs
+/backend/dist
+/frontend/dist
+
+# Editor/OS Specific Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
