@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+// FIX: Ensure approveUser and rejectUser are imported
 const { register, login, profile, updateProfile, getPendingUsers, approveUser, rejectUser } = require('../controllers/auth.controller');
 const { authenticateToken, requireAdmin } = require('../middleware/auth.middleware');
 
@@ -11,9 +12,8 @@ router.post('/login', login);
 router.get('/profile', authenticateToken, profile);
 router.put('/profile', authenticateToken, updateProfile);
 
-// Admin routes for user approval/rejection (FIXED)
 router.get('/pending-users', authenticateToken, requireAdmin, getPendingUsers);
 router.put('/approve-user/:userId', authenticateToken, requireAdmin, approveUser);
-router.put('/reject-user/:userId', authenticateToken, requireAdmin, rejectUser); 
+router.put('/reject-user/:userId', authenticateToken, requireAdmin, rejectUser);
 
 module.exports = router;

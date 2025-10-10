@@ -10,13 +10,12 @@ const AdminUserApprovals = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  // FIX: Get the base API URL from the environment for absolute path linking
+  // FIX: Get the base API URL for absolute path linking
   const BASE_API_URL = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
 
   useEffect(() => {
     fetchPendingUsers();
   }, []);
-  // ... (fetchPendingUsers, handleApproveUser, handleRejectUser functions remain the same)
 
   const fetchPendingUsers = async () => {
     try {
@@ -107,7 +106,7 @@ const AdminUserApprovals = () => {
       ) : (
         <div className="questions-modern">
           {pendingUsers.map((pendingUser) => (
-            // FIX: Uses 'card' class for dark theme background and spacing
+            // FIX: Uses 'card' class for dark theme background (resolves 'white container')
             <div key={pendingUser._id} className="card p-6 admin-user-card"> 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* User Information */}
@@ -117,7 +116,6 @@ const AdminUserApprovals = () => {
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    {/* FIX: Ensure field names match actual user data or fallbacks */}
                     <div><strong>Email:</strong> <span className="text-secondary">{pendingUser.email}</span></div>
                     <div><strong>University:</strong> <span className="text-secondary">{pendingUser.university}</span></div>
                     <div><strong>Degree:</strong> <span className="text-secondary">{pendingUser.degree}</span></div>
@@ -139,14 +137,14 @@ const AdminUserApprovals = () => {
                   
                   <button
                     onClick={() => handleApproveUser(pendingUser._id)}
-                    className="btn-primary w-full bg-green-600 hover:bg-green-700" // FIX: Clear buttons
+                    className="btn btn-success w-full" // FIX: Modern Button UI
                   >
                     ✅ Approve User
                   </button>
                   
                   <button
                     onClick={() => setSelectedUser(pendingUser)}
-                    className="btn-secondary w-full bg-red-600 hover:bg-red-700 text-white" // FIX: Clear buttons
+                    className="btn btn-danger w-full" // FIX: Modern Button UI
                   >
                     ❌ Reject User
                   </button>

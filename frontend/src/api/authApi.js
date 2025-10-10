@@ -19,7 +19,7 @@ export const logoutUser = async () => {
 };
 
 // Password reset functions
-export const forgotPassword = (method, identifier) => {
+export export const forgotPassword = (method, identifier) => {
   return api.post(`${AUTH_URL}/forgot-password`, { method, identifier });
 };
 
@@ -33,11 +33,11 @@ export const getPendingUsers = () => {
 };
 
 export const approveUser = (userId) => {
-  return api.put(`${AUTH_URL}/approve/${userId}`);
+  return api.put(`${AUTH_URL}/approve-user/${userId}`);
 };
 
 export const rejectUser = (userId, reason) => {
-  return api.delete(`${AUTH_URL}/reject/${userId}`, { data: { reason } }); 
+  return api.put(`${AUTH_URL}/reject-user/${userId}`, { reason });
 };
 
 export const getUserProfile = () => {
