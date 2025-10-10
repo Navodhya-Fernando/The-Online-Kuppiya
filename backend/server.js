@@ -1,3 +1,5 @@
+// navodhya-fernando/the-online-kuppiya/.../backend/server.js
+
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
@@ -18,7 +20,7 @@ if (isSentryEnabled()) {
     app.use(Sentry.Handlers.requestHandler());
 }
 
-// CORS configuration
+// CORS configuration (includes GitHub Pages domain)
 app.use(cors({
   origin: [
     'http://localhost:3000', 
@@ -65,7 +67,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// FIX: Add route for serving static files (documents)
+// FIX: Add route for serving static files (documents) from the uploads directory
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
