@@ -24,7 +24,6 @@ const Home = () => {
   const [topQuestions, setTopQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('activity');
 
   useEffect(() => {
     const loadQuestions = async () => {
