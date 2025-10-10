@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
-        await logoutUser();
+        // We only perform client-side cleanup for JWTs.
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         setUser(null);

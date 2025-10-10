@@ -2102,3 +2102,15 @@ textarea:focus {
         font-size: var(--font-size-sm);
     }
 }
+
+/* --- Mobile Responsiveness Fix for Auth Forms (Registration/Login) --- */
+@media (max-width: 640px) {
+    .auth-form-container {
+        /* Overrides max-width and margin set by desktop utilities */
+        max-width: 100% !important; 
+        margin: 0 !important; 
+        padding: 1.5rem 1rem !important; /* Reduced top/bottom padding for mobile */
+        box-shadow: none !important; /* Remove shadow for full-width mobile experience */
+        border-radius: 0 !important;
+    }
+}
