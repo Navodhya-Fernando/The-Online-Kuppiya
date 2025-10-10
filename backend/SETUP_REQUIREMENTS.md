@@ -1,21 +1,44 @@
-# Backend Dependencies Installation Guide
+# Backend Setup Requirements
 
-## Required npm packages for the enhanced authentication system:
+## Core Dependencies
+
+All required dependencies are already included in `package.json`. To install:
 
 ```bash
 cd backend
+npm install
+```
 
-# Core authentication and file upload
+## Additional Dependencies (If Needed)
+
+### Authentication & File Upload
+```bash
+# Session management
 npm install express-session
-npm install multer
-npm install nodemailer
-npm install twilio
 
-# Optional but recommended for production
-npm install express-rate-limit  # Rate limiting for API endpoints
-npm install helmet              # Security headers
-npm install cors                # CORS support
-npm install compression         # Response compression
+# File upload handling
+npm install multer
+
+# Email service
+npm install nodemailer
+
+# SMS service
+npm install twilio
+```
+
+### Production Enhancements
+```bash
+# Rate limiting for API endpoints
+npm install express-rate-limit
+
+# Security headers
+npm install helmet
+
+# CORS support
+npm install cors
+
+# Response compression
+npm install compression
 ```
 
 ## Environment Variables (.env file):
