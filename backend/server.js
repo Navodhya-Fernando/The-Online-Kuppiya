@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
-const path = require('path');
+const path = require('path'); // IMPORTANT: Add path module import
 const connectDB = require('./config/index');
 const { errorHandler } = require('./middleware/error.middleware');
 const { initializeSentry, getSentryInstance, isSentryEnabled } = require('./config/sentry');
@@ -25,7 +25,7 @@ app.use(cors({
     'http://localhost:3003', 
     'http://127.0.0.1:5173', 
     'http://localhost:5173', 
-    'https://navodhya-fernando.github.io' // Added the live GitHub Pages domain
+    'https://navodhya-fernando.github.io' 
   ],
   credentials: true
 }));
@@ -65,22 +65,18 @@ app.get('/', (req, res) => {
   });
 });
 
-
-// Serve static files from uploads directory for document viewing
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 
-// Add Sentry error handler before other error handlers (only if enabled)
 if (isSentryEnabled()) {
     app.use(Sentry.Handlers.errorHandler());
 }
 
 app.use(errorHandler);
 
-// 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,

@@ -14,11 +14,9 @@ export const loginUser = (credentials) => {
   return api.post(`${AUTH_URL}/login`, credentials);
 };
 
-export const logoutUser = () => {
-  return api.get(`${AUTH_URL}/logout`);
+export const logoutUser = async () => {
+  // Client-side token removal only (API call removed in AuthContext)
 };
-
-// OTP functions removed - using student ID verification instead
 
 // Password reset functions
 export const forgotPassword = (method, identifier) => {
@@ -39,7 +37,7 @@ export const approveUser = (userId) => {
 };
 
 export const rejectUser = (userId, reason) => {
-  return api.delete(`${AUTH_URL}/reject/${userId}`, { data: { reason } });
+  return api.delete(`${AUTH_URL}/reject/${userId}`, { data: { reason } }); 
 };
 
 export const getUserProfile = () => {

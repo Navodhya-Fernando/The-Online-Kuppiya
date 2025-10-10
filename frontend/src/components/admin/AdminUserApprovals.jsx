@@ -10,9 +10,13 @@ const AdminUserApprovals = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
+  // FIX: Get the base API URL from the environment for absolute path linking
+  const BASE_API_URL = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
+
   useEffect(() => {
     fetchPendingUsers();
   }, []);
+  // ... (fetchPendingUsers, handleApproveUser, handleRejectUser functions remain the same)
 
   const fetchPendingUsers = async () => {
     try {
@@ -48,8 +52,8 @@ const AdminUserApprovals = () => {
   };
 
   const viewStudentId = (filePath) => {
-    // Open the student ID file in a new window/tab
-    const fileUrl = `/api/uploads/${filePath}`;
+    // FIX: Use absolute URL for the document to fix 404/undefined error on GitHub Pages
+    const fileUrl = `${BASE_API_URL}/api/uploads/${filePath}`;
     window.open(fileUrl, '_blank');
   };
 
@@ -78,7 +82,7 @@ const AdminUserApprovals = () => {
   }
 
   return (
-    <div className="container py-8">
+    <div className="container mx-auto px-4 py-8">
       <div className="modern-header mb-8">
         <div className="header-content">
           <h1 className="modern-title">User Registration Approvals</h1>
@@ -103,7 +107,8 @@ const AdminUserApprovals = () => {
       ) : (
         <div className="questions-modern">
           {pendingUsers.map((pendingUser) => (
-            <div key={pendingUser._id} className="card p-6">
+            // FIX: Uses 'card' class for dark theme background and spacing
+            <div key={pendingUser._id} className="card p-6 admin-user-card"> 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* User Information */}
                 <div className="lg:col-span-2">
@@ -112,6 +117,7 @@ const AdminUserApprovals = () => {
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    {/* FIX: Ensure field names match actual user data or fallbacks */}
                     <div><strong>Email:</strong> <span className="text-secondary">{pendingUser.email}</span></div>
                     <div><strong>University:</strong> <span className="text-secondary">{pendingUser.university}</span></div>
                     <div><strong>Degree:</strong> <span className="text-secondary">{pendingUser.degree}</span></div>
@@ -125,7 +131,7 @@ const AdminUserApprovals = () => {
                   {pendingUser.studentIdFile && (
                     <button
                       onClick={() => viewStudentId(pendingUser.studentIdFile)}
-                      className="btn-minimal w-full"
+                      className="btn btn-secondary w-full"
                     >
                       📄 View Document
                     </button>
@@ -133,18 +139,16 @@ const AdminUserApprovals = () => {
                   
                   <button
                     onClick={() => handleApproveUser(pendingUser._id)}
-                    className="btn-minimal-primary w-full"
-                    style={{ background: 'var(--accent-green)', borderColor: 'var(--accent-green)' }}
+                    className="btn-primary w-full bg-green-600 hover:bg-green-700" // FIX: Clear buttons
                   >
-                    ✅ Approve
+                    ✅ Approve User
                   </button>
                   
                   <button
                     onClick={() => setSelectedUser(pendingUser)}
-                    className="btn-minimal w-full"
-                    style={{ background: 'var(--accent-red)', borderColor: 'var(--accent-red)', color: 'white' }}
+                    className="btn-secondary w-full bg-red-600 hover:bg-red-700 text-white" // FIX: Clear buttons
                   >
-                    ❌ Reject
+                    ❌ Reject User
                   </button>
                 </div>
               </div>
@@ -153,20 +157,20 @@ const AdminUserApprovals = () => {
         </div>
       )}
 
-      {/* Rejection Modal */}
+      {/* Rejection Modal (Code omitted for brevity) */}
       {selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="ask-question-card w-full max-w-md mx-4">
-            <h3 className="page-title text-xl mb-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">
               Reject User: {selectedUser.name || `${selectedUser.firstName} ${selectedUser.lastName}`}
             </h3>
             
-            <div className="form-field mb-6">
-              <label className="field-label">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Rejection Reason:
               </label>
               <textarea
-                className="field-textarea"
+                className="form-control"
                 rows="4"
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
@@ -175,20 +179,19 @@ const AdminUserApprovals = () => {
               />
             </div>
             
-            <div className="form-actions">
+            <div className="flex space-x-3">
               <button
                 onClick={() => {
                   setSelectedUser(null);
                   setRejectionReason('');
                 }}
-                className="btn-secondary flex-1"
+                className="btn btn-secondary flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleRejectUser(selectedUser._id)}
-                className="btn-primary flex-1"
-                style={{ background: 'var(--accent-red)' }}
+                className="btn btn-danger flex-1"
                 disabled={!rejectionReason.trim()}
               >
                 Reject User

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { register, login, profile, updateProfile, getPendingUsers, approveUser, rejectUser } = require('../controllers/auth.controller');
-const { authenticateToken } = require('../middleware/auth.middleware');
+const { authenticateToken, requireAdmin } = require('../middleware/auth.middleware');
 
 // Public routes
 router.post('/register', register);
@@ -11,11 +11,9 @@ router.post('/login', login);
 router.get('/profile', authenticateToken, profile);
 router.put('/profile', authenticateToken, updateProfile);
 
-// Admin route to get pending users
-
-// Admin routes for user approval/rejection
-router.get('/pending-users', authenticateToken, getPendingUsers);
-router.put('/approve/:id', authenticateToken, approveUser);
-router.delete('/reject/:id', authenticateToken, rejectUser);
+// Admin routes for user approval/rejection (FIXED)
+router.get('/pending-users', authenticateToken, requireAdmin, getPendingUsers);
+router.put('/approve-user/:userId', authenticateToken, requireAdmin, approveUser);
+router.put('/reject-user/:userId', authenticateToken, requireAdmin, rejectUser); 
 
 module.exports = router;
