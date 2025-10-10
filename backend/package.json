@@ -10,7 +10,13 @@
     "dev:local": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["education", "university", "sri-lanka", "mern", "api"],
+  "keywords": [
+    "education",
+    "university",
+    "sri-lanka",
+    "mern",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -19,6 +25,7 @@
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.1",
     "multer": "^2.0.2",

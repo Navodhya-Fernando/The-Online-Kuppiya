@@ -1,165 +1,185 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getLeaderboard } from '../api/leaderboardApi';
+import { Spinner } from '../components/shared/Spinner';
 
 const LeaderboardPage = () => {
-    // Placeholder data for the leaderboard UI
-    const contributors = [
-        { id: 1, username: "Anuruddha_A", uploads: 15, credits: 500, avatar: "AA" },
-        { id: 2, username: "Sanda_G", uploads: 12, credits: 450, avatar: "SG" },
-        { id: 3, username: "Chamika_P", uploads: 10, credits: 380, avatar: "CP" },
-        { id: 4, username: "Nimasha_R", uploads: 8, credits: 320, avatar: "NR" },
-        { id: 5, username: "Kavinda_M", uploads: 7, credits: 280, avatar: "KM" },
-    ];
+    const [leaderboardData, setLeaderboardData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const getRankIcon = (rank) => {
-        switch(rank) {
-            case 1:
-                return (
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">🏆</span>
-                        </div>
-                        <span className="font-bold text-lg text-yellow-400">#1</span>
-                    </div>
-                );
-            case 2:
-                return (
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-r from-gray-300 to-gray-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">🥈</span>
-                        </div>
-                        <span className="font-bold text-lg text-gray-400">#2</span>
-                    </div>
-                );
-            case 3:
-                return (
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">🥉</span>
-                        </div>
-                        <span className="font-bold text-lg text-orange-400">#3</span>
-                    </div>
-                );
-            default:
-                return (
-                    <div className="w-10 h-10 bg-tertiary rounded-full flex items-center justify-center">
-                        <span className="font-bold text-secondary">#{rank}</span>
-                    </div>
-                );
-        }
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const response = await getLeaderboard();
+                if (response) {
+                    setLeaderboardData(response);
+                } else {
+                    setError('Failed to load leaderboard data');
+                }
+            } catch (err) {
+                console.error('Leaderboard fetch error:', err);
+                setError('Failed to load leaderboard data');
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchData();
+    }, []);
+
+    const getRankClass = (rank) => {
+        if (rank === 1) return 'rank-1';
+        if (rank === 2) return 'rank-2';
+        if (rank === 3) return 'rank-3';
+        return '';
     };
 
+    const { users, platformStats } = leaderboardData || {};
+
     return (
-        <div className="min-h-screen bg-primary">
-            <div className="container mx-auto px-4 py-12">
-                {/* Header Section */}
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
                 <div className="text-center mb-12">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-tertiary rounded-2xl mb-4">
-                        <span className="text-3xl">🏆</span>
-                    </div>
-                    <h1 className="text-4xl font-bold text-primary mb-4">Top Contributors</h1>
-                    <p className="text-secondary text-lg max-w-2xl mx-auto">
-                        Celebrating our community heroes who share knowledge and help others succeed
+                    <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight mb-4">
+                        🏆 Leaderboard
+                    </h1>
+                    <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                        Recognizing the most active and helpful members of our community
                     </p>
                 </div>
 
-                {/* Statistics Cards */}
+                {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div className="bg-secondary rounded-xl p-6 border border-light">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-blue bg-opacity-20 rounded-xl flex items-center justify-center">
-                                <span className="text-blue text-xl">📚</span>
-                            </div>
-                            <div>
-                                <p className="text-muted text-sm">Total Resources</p>
-                                <p className="text-2xl font-bold text-primary">52</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="bg-secondary rounded-xl p-6 border border-light">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-green bg-opacity-20 rounded-xl flex items-center justify-center">
-                                <span className="text-green text-xl">👥</span>
-                            </div>
-                            <div>
-                                <p className="text-muted text-sm">Active Contributors</p>
-                                <p className="text-2xl font-bold text-primary">5</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="bg-secondary rounded-xl p-6 border border-light">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-purple bg-opacity-20 rounded-xl flex items-center justify-center">
-                                <span className="text-purple text-xl">⭐</span>
-                            </div>
-                            <div>
-                                <p className="text-muted text-sm">Total Credits</p>
-                                <p className="text-2xl font-bold text-primary">2,130</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Leaderboard */}
-                <div className="bg-secondary rounded-xl border border-light overflow-hidden">
-                    <div className="p-6 border-b border-light">
-                        <h2 className="text-xl font-semibold text-primary">Rankings</h2>
-                        <p className="text-secondary text-sm mt-1">Based on contributions and community engagement</p>
-                    </div>
-                    
-                    <div className="divide-y divide-light">
-                        {contributors.map((contributor, index) => {
-                            const rank = index + 1;
-                            return (
-                                <div key={contributor.id} className="p-6 hover:bg-tertiary transition-colors group">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            {getRankIcon(rank)}
-                                            
-                                            <div className="w-12 h-12 bg-blue bg-opacity-20 rounded-xl flex items-center justify-center">
-                                                <span className="text-blue font-semibold text-sm">{contributor.avatar}</span>
-                                            </div>
-                                            
-                                            <div>
-                                                <h3 className="font-semibold text-primary group-hover:text-blue transition-colors">
-                                                    {contributor.username}
-                                                </h3>
-                                                <p className="text-secondary text-sm">Student Contributor</p>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-8">
-                                            <div className="text-center">
-                                                <p className="text-2xl font-bold text-primary">{contributor.uploads}</p>
-                                                <p className="text-secondary text-xs">Resources</p>
-                                            </div>
-                                            
-                                            <div className="text-center">
-                                                <p className="text-2xl font-bold text-blue">{contributor.credits}</p>
-                                                <p className="text-secondary text-xs">Credits</p>
-                                            </div>
-                                            
-                                            <button className="btn-secondary text-sm px-4 py-2">
-                                                View Profile
-                                            </button>
-                                        </div>
-                                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                                    <span className="text-2xl">📚</span>
                                 </div>
-                            );
-                        })}
+                            </div>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Questions</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    {loading ? (
+                                        <span className="animate-pulse bg-gray-300 dark:bg-gray-600 rounded w-8 h-8 inline-block"></span>
+                                    ) : (
+                                        platformStats?.totalQuestions || 0
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                                    <span className="text-2xl">👥</span>
+                                </div>
+                            </div>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{platformStats?.totalUsers || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
+                                    <span className="text-2xl">💬</span>
+                                </div>
+                            </div>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Answers</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    {loading ? (
+                                        <span className="animate-pulse bg-gray-300 dark:bg-gray-600 rounded w-8 h-8 inline-block"></span>
+                                    ) : (
+                                        platformStats?.totalAnswers || 0
+                                    )}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Call to Action */}
-                <div className="text-center mt-12">
-                    <div className="bg-secondary rounded-xl p-8 border border-light">
-                        <h3 className="text-xl font-semibold text-primary mb-2">Want to climb the leaderboard?</h3>
-                        <p className="text-secondary mb-6">Share your knowledge and help fellow students succeed</p>
-                        <button className="btn-primary">
-                            Upload Resource
-                        </button>
-                    </div>
+                {/* Leaderboard Table */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    {loading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <Spinner />
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-20">
+                            <div className="text-6xl mb-4">😞</div>
+                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Leaderboard</h3>
+                            <p className="text-gray-600 dark:text-gray-400">We couldn't fetch the leaderboard data. Please try again later.</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rank</th>
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Questions</th>
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Answers</th>
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reputation</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                                    {users?.map((user, index) => (
+                                        <tr key={user._id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    {index < 3 ? (
+                                                        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                                                            index === 0 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                                                            index === 1 ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' :
+                                                            'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                                                        }`}>
+                                                            {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-sm font-bold">
+                                                            #{index + 1}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <div className="flex-shrink-0 h-10 w-10">
+                                                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center text-white font-semibold">
+                                                            {user.avatar || user.name?.charAt(0)?.toUpperCase() || '?'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                                                {user.questionsAsked || 0}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                                                {user.answersGiven || 0}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                    {user.reputation || 0} ⭐
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

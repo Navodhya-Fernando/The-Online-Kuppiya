@@ -17,7 +17,7 @@ const AdminUserApprovals = () => {
   const fetchPendingUsers = async () => {
     try {
       const response = await getPendingUsers();
-      setPendingUsers(response.data);
+      setPendingUsers(response.data.users || []);
     } catch (error) {
       setMessage(error.response?.data?.message || 'Failed to fetch pending users');
     } finally {
@@ -90,7 +90,7 @@ const AdminUserApprovals = () => {
         </div>
       )}
 
-      {pendingUsers.length === 0 ? (
+      {!Array.isArray(pendingUsers) || pendingUsers.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
           <p className="text-gray-600">No pending user registrations.</p>
         </div>

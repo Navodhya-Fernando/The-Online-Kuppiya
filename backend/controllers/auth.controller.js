@@ -148,6 +148,7 @@ const login = async (req, res) => {
 // Get User Profile
 const profile = async (req, res) => {
   try {
+    // Get user basic info
     const user = await User.findById(req.user.id).select('-password');
     if (!user) {
       return res.status(404).json({
@@ -156,9 +157,57 @@ const profile = async (req, res) => {
       });
     }
 
+    // Resource functionality removed - Q&A only platform
+
+    // Get user's questions
+    let questions = [];
+    try {
+      const Question = require('../models/Question.model');
+      questions = await Question.find({ authorId: req.user.id })
+        .select('title body courseCode tags createdAt answerCount upvotes downvotes status')
+        .sort({ createdAt: -1 })
+        .limit(10);
+    } catch (error) {
+      console.log('Question model error:', error.message);
+      questions = [];
+    }
+
+    // Get user's answers
+    let answers = [];
+    try {
+      const Answer = require('../models/Answer.model');
+      answers = await Answer.find({ authorId: req.user.id })
+        .select('content questionId createdAt upvotes downvotes')
+        .populate('questionId', 'title courseCode')
+        .sort({ createdAt: -1 })
+        .limit(10);
+    } catch (error) {
+      console.log('Answer model error:', error.message);
+      answers = [];
+    }
+
+    // Combine recent activity from Q&A only
+    const recentActivity = [
+      ...questions.map(item => ({ ...item.toObject(), type: 'question', timestamp: item.createdAt })),
+      ...answers.map(item => ({ ...item.toObject(), type: 'answer', timestamp: item.createdAt }))
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
+
+    // Calculate stats (Q&A only)
+    const questionCount = questions.length;
+    const answerCount = answers.length;
+
+    const userProfile = {
+      ...user.toObject(),
+      questions,
+      answers,
+      recentActivity,
+      questionCount,
+      answerCount
+    };
+
     res.json({
       success: true,
-      user
+      user: userProfile
     });
   } catch (error) {
     console.error('Profile fetch error:', error);
@@ -173,13 +222,15 @@ const profile = async (req, res) => {
 // Update User Profile
 const updateProfile = async (req, res) => {
   try {
-    const { name, university, degree, year } = req.body;
+    const { name, university, degree, year, avatar, bio } = req.body;
     
     const updateData = {};
     if (name) updateData.name = name;
     if (university) updateData.university = university;
     if (degree) updateData.degree = degree;
     if (year) updateData.year = parseInt(year);
+    if (avatar) updateData.avatar = avatar;
+    if (bio !== undefined) updateData.bio = bio;
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -209,9 +260,24 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// Get Pending Users (Admin Only)
+const getPendingUsers = async (req, res) => {
+  try {
+    // Check if user is admin
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const pendingUsers = await User.find({ isApproved: false });
+    res.json({ success: true, users: pendingUsers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch pending users', error: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
   profile,
-  updateProfile
+  updateProfile,
+  getPendingUsers
 };

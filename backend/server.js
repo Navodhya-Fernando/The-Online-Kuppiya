@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const path = require('path');
-const { connectDB } = require('./config/index');
+const connectDB = require('./config/index');
 const { errorHandler } = require('./middleware/error.middleware');
 const { initializeSentry, getSentryInstance, isSentryEnabled } = require('./config/sentry');
 
@@ -38,12 +38,8 @@ app.use(session({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve uploaded files
-app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // Routes
 const authRoutes = require('./routes/auth.route');
-const resourceRoutes = require('./routes/resource.route');
 const questionRoutes = require('./routes/question.route');
 const leaderboardRoutes = require('./routes/leaderboard.route');
 
@@ -54,10 +50,9 @@ app.get('/', (req, res) => {
   res.json({ 
     message: 'The Online Kuppiya API is running!',
     version: '1.0.0',
-    description: 'A unified platform for Sri Lankan university students to share resources and collaborate',
+    description: 'A Q&A forum platform for Sri Lankan university students',
     endpoints: {
       auth: '/api/auth',
-      resources: '/api/resources', 
       questions: '/api/questions',
       leaderboard: '/api/leaderboard'
     }
@@ -65,7 +60,6 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/resources', resourceRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 

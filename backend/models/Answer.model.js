@@ -27,7 +27,7 @@ const answerSchema = new mongoose.Schema({
 });
 
 answerSchema.virtual('voteScore').get(function() {
-  return this.upvotes.length - this.downvotes.length;
+  return (this.upvotes?.length || 0) - (this.downvotes?.length || 0);
 });
 
 answerSchema.methods.upvote = function(userId) {

@@ -31,9 +31,9 @@ const NotFoundPage = () => {
                 <span>🏠</span>
                 Go to Homepage
               </Link>
-              <Link to="/resources" className="btn-secondary">
-                <span>📚</span>
-                Browse Resources
+              <Link to="/questions" className="btn-secondary">
+                <span>❓</span>
+                Browse Questions
               </Link>
             </div>
             
@@ -50,10 +50,10 @@ const NotFoundPage = () => {
             <h3 className="text-lg font-semibold text-primary mb-6">Popular Destinations</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               
-              <Link to="/resources" className="group bg-secondary rounded-xl p-4 border border-light hover:border-blue transition-colors">
-                <div className="text-2xl mb-2">📚</div>
-                <h4 className="font-semibold text-primary group-hover:text-blue">Resources</h4>
-                <p className="text-secondary text-sm">Study materials & notes</p>
+              <Link to="/questions" className="group bg-secondary rounded-xl p-4 border border-light hover:border-blue transition-colors">
+                <div className="text-2xl mb-2">❓</div>
+                <h4 className="font-semibold text-primary group-hover:text-blue">Questions</h4>
+                <p className="text-secondary text-sm">Q&A discussions</p>
               </Link>
               
               <Link to="/forum" className="group bg-secondary rounded-xl p-4 border border-light hover:border-blue transition-colors">

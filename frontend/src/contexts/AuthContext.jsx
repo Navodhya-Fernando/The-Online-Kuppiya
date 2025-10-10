@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loginUser, registerUser, logoutUser } from '../api/authApi';
+import api from '../api/axios';
 
 const AuthContext = createContext(null);
 
@@ -11,17 +12,42 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Function to clear authentication data
+    const clearAuthData = () => {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        setUser(null);
+    };
+
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
+        const storedToken = localStorage.getItem('token');
         
-        if (storedUser) {
+        console.log('Checking auth data:', { 
+            hasUser: !!storedUser, 
+            hasToken: !!storedToken,
+            userPreview: storedUser ? storedUser.substring(0, 50) + '...' : null
+        });
+        
+        // Only set user if both user data and token exist
+        if (storedUser && storedToken) {
             try {
-                setUser(JSON.parse(storedUser));
+                const parsedUser = JSON.parse(storedUser);
+                // Validate token format (basic check)
+                if (storedToken.length > 10) {
+                    setUser(parsedUser);
+                } else {
+                    console.warn("Invalid token format. Clearing storage.");
+                    clearAuthData();
+                }
             } catch (error) {
                 console.error("Error parsing stored user data. Clearing storage:", error);
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
+                clearAuthData();
             }
+        } else if (storedUser || storedToken) {
+            // If only one exists, clear both to maintain consistency
+            console.warn("Inconsistent auth data. Clearing storage.");
+            clearAuthData();
         }
         
         setLoading(false);
@@ -69,6 +95,12 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const updateUser = (updatedUserData) => {
+        const newUserData = { ...user, ...updatedUserData };
+        setUser(newUserData);
+        localStorage.setItem('user', JSON.stringify(newUserData));
+    };
+
     const value = {
         user,
         isAuthenticated: !!user,
@@ -76,6 +108,8 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        updateUser,
+        clearAuthData, // Expose this function for manual clearing
     };
 
     return (

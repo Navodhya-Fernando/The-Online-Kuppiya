@@ -5,30 +5,42 @@ const User = require('../models/User.model');
 // Create Question
 const createQuestion = async (req, res) => {
   try {
-    const { title, content, course, university, tags } = req.body;
+    const { title, body, courseCode, tags } = req.body;
 
     // Validate required fields
-    if (!title || !content || !course || !university) {
+    if (!title || !body || !courseCode) {
       return res.status(400).json({
         success: false,
-        message: 'Title, content, course, and university are required'
+        message: 'Title, body, and courseCode are required'
       });
+    }
+
+    // Use _id instead of id for consistency
+    const userId = req.user._id || req.user.id;
+
+    // Process tags - handle both array and string inputs
+    let processedTags = [];
+    if (tags) {
+      if (Array.isArray(tags)) {
+        processedTags = tags.map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
+      } else if (typeof tags === 'string') {
+        processedTags = tags.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
+      }
     }
 
     // Create question
     const question = new Question({
-      title,
-      content,
-      course,
-      university,
-      authorId: req.user.id,
-      tags: tags ? tags.split(',').map(tag => tag.trim().toLowerCase()) : []
+      title: title.trim(),
+      body: body.trim(),
+      courseCode: courseCode.trim(),
+      authorId: userId,
+      tags: processedTags
     });
 
     await question.save();
 
     // Award credits to question author
-    await User.findByIdAndUpdate(req.user.id, { $inc: { credits: 5, reputation: 2 } });
+    await User.findByIdAndUpdate(userId, { $inc: { credits: 5, reputation: 2 } });
 
     // Populate author info
     await question.populate('authorId', 'name university degree');
@@ -59,14 +71,14 @@ const getAllQuestions = async (req, res) => {
       tags,
       search,
       sortBy = 'newest',
-      status = 'open'
+      status
     } = req.query;
 
     const filter = {};
     
     if (course) filter.course = new RegExp(course, 'i');
     if (university) filter.university = new RegExp(university, 'i');
-    if (status !== 'all') filter.status = status;
+    if (status && status !== 'all') filter.status = status;
     if (tags) {
       const tagArray = tags.split(',').map(tag => tag.trim().toLowerCase());
       filter.tags = { $in: tagArray };
@@ -133,9 +145,7 @@ const getAllQuestions = async (req, res) => {
 const getQuestionById = async (req, res) => {
   try {
     const question = await Question.findById(req.params.id)
-      .populate('authorId', 'name university degree reputation')
-      .populate('upvotes', 'name')
-      .populate('downvotes', 'name');
+      .populate('authorId', 'name university degree reputation');
 
     if (!question) {
       return res.status(404).json({
@@ -148,7 +158,7 @@ const getQuestionById = async (req, res) => {
     question.viewCount += 1;
     await question.save();
 
-    // Get answers for this question
+    // Get answers for this question  
     const answers = await Answer.find({ questionId: question._id })
       .populate('authorId', 'name university degree reputation')
       .sort({ isAccepted: -1, createdAt: -1 });
@@ -277,11 +287,14 @@ const createAnswer = async (req, res) => {
       });
     }
 
+    // Use consistent user ID reference
+    const userId = req.user._id || req.user.id;
+
     // Create answer
     const answer = new Answer({
-      content,
+      content: content.trim(),
       questionId,
-      authorId: req.user.id
+      authorId: userId
     });
 
     await answer.save();
@@ -291,7 +304,7 @@ const createAnswer = async (req, res) => {
     await question.save();
 
     // Award credits to answer author
-    await User.findByIdAndUpdate(req.user.id, { $inc: { credits: 3, reputation: 1 } });
+    await User.findByIdAndUpdate(userId, { $inc: { credits: 3, reputation: 1 } });
 
     // Populate author info
     await answer.populate('authorId', 'name university degree reputation');

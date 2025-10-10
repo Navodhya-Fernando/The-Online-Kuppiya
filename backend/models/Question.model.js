@@ -2,9 +2,8 @@ const mongoose = require('mongoose');
 
 const questionSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, maxlength: 200 },
-  content: { type: String, required: true },
-  course: { type: String, required: true, trim: true },
-  university: { type: String, required: true, trim: true },
+  body: { type: String, required: true },
+  courseCode: { type: String, required: true, trim: true },
   tags: [{ type: String, lowercase: true, trim: true, maxlength: 20 }],
   authorId: { 
     type: mongoose.Schema.Types.ObjectId, 
@@ -32,7 +31,7 @@ const questionSchema = new mongoose.Schema({
 });
 
 questionSchema.virtual('voteScore').get(function() {
-  return this.upvotes.length - this.downvotes.length;
+  return (this.upvotes?.length || 0) - (this.downvotes?.length || 0);
 });
 
 questionSchema.methods.upvote = function(userId) {

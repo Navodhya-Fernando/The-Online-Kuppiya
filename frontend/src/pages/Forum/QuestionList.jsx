@@ -1,258 +1,238 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { fetchAllQuestions } from '../../api/questionApi';
-import useApi from '../../hooks/useApi';
+import { Link, useNavigate } from 'react-router-dom';
+import { fetchAllQuestions, voteQuestion } from '../../api/questionApi';
 import { useAuth } from '../../contexts/AuthContext';
+import { Spinner } from '../../components/shared/Spinner';
+import { formatDistanceToNow } from 'date-fns';
+
+const PlusIcon = () => (
+    <svg className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    </svg>
+);
+
+const SearchIcon = () => (
+    <svg className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+);
 
 const QuestionList = () => {
-  const { data: questions, loading, error, execute: loadQuestions } = useApi(fetchAllQuestions);
-  const { user, isAuthenticated } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('recent');
+    const [questions, setQuestions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filter, setFilter] = useState('most_recent');
 
-  useEffect(() => {
-    loadQuestions();
-  }, [loadQuestions]);
-
-  const filteredQuestions = questions?.filter(question => 
-    question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    question.courseCode.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const sortedQuestions = filteredQuestions?.sort((a, b) => {
-    switch(sortBy) {
-      case 'popular':
-        return (b.answerCount || 0) - (a.answerCount || 0);
-      case 'unanswered':
-        return (a.answerCount || 0) - (b.answerCount || 0);
-      case 'recent':
-      default:
-        return new Date(b.createdAt) - new Date(a.createdAt);
-    }
-  });
-
-  const getQuestionStats = () => {
-    if (!questions) return { total: 0, answered: 0, unanswered: 0 };
-    
-    const answered = questions.filter(q => (q.answerCount || 0) > 0).length;
-    return {
-      total: questions.length,
-      answered,
-      unanswered: questions.length - answered
+    const loadQuestions = async () => {
+        try {
+            setLoading(true);
+            const response = await fetchAllQuestions();
+            // Access response.data since axios returns the full response object
+            if (response && response.data && response.data.success && response.data.questions) {
+                setQuestions(response.data.questions);
+            } else {
+                setError('Failed to load questions');
+            }
+        } catch (err) {
+            console.error('Questions fetch error:', err);
+            setError('Failed to load questions');
+        } finally {
+            setLoading(false);
+        }
     };
-  };
 
-  const stats = getQuestionStats();
-
-  return (
-    <div className="min-h-screen bg-primary">
-      <div className="container mx-auto px-4 py-8">
+    const handleVote = async (questionId, voteType) => {
+        if (!user) {
+            navigate('/auth/login');
+            return;
+        }
         
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-tertiary rounded-2xl mb-4">
-            <span className="text-3xl">💬</span>
-          </div>
-          <h1 className="text-4xl font-bold text-primary mb-4">Q&A Forum</h1>
-          <p className="text-secondary text-lg max-w-2xl mx-auto">
-            Get help from the community and share your knowledge with fellow students
-          </p>
-        </div>
+        try {
+            const response = await voteQuestion(questionId, voteType);
+            if (response && response.data && response.data.success) {
+                // Update local state with new vote counts
+                setQuestions(prevQuestions =>
+                    prevQuestions.map(q =>
+                        q._id === questionId ? { ...q, upvotes: response.data.upvotes, downvotes: response.data.downvotes } : q
+                    )
+                );
+            }
+        } catch (err) {
+            console.error('Vote error:', err);
+        }
+    };
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-secondary rounded-xl p-6 border border-light text-center">
-            <div className="text-3xl font-bold text-blue">{stats.total}</div>
-            <div className="text-sm text-muted">Total Questions</div>
-          </div>
-          <div className="bg-secondary rounded-xl p-6 border border-light text-center">
-            <div className="text-3xl font-bold text-green">{stats.answered}</div>
-            <div className="text-sm text-muted">Answered</div>
-          </div>
-          <div className="bg-secondary rounded-xl p-6 border border-light text-center">
-            <div className="text-3xl font-bold text-orange">{stats.unanswered}</div>
-            <div className="text-sm text-muted">Need Answers</div>
-          </div>
-        </div>
+    useEffect(() => {
+        loadQuestions();
+    }, []);
 
-        {/* Search and Filters */}
-        <div className="bg-secondary rounded-xl p-6 mb-8 border border-light">
-          <div className="flex flex-col md:flex-row gap-4">
-            
-            {/* Search Bar */}
-            <div className="flex-1 relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-muted">🔍</span>
-              </div>
-              <input 
-                type="text"
-                placeholder="Search questions by title or course code..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-primary pl-10 w-full"
-              />
-            </div>
 
-            {/* Sort Dropdown */}
-            <div className="relative">
-              <select 
-                value={sortBy} 
-                onChange={(e) => setSortBy(e.target.value)}
-                className="input-primary pr-10 appearance-none cursor-pointer"
-              >
-                <option value="recent">🕐 Most Recent</option>
-                <option value="popular">🔥 Most Popular</option>
-                <option value="unanswered">❓ Unanswered</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className="text-muted">▼</span>
-              </div>
-            </div>
 
-            {/* Ask Question Button */}
-            {isAuthenticated && (
-              <Link to="/forum/ask" className="btn-primary whitespace-nowrap">
-                <span>❓</span>
-                Ask Question
-              </Link>
-            )}
-          </div>
-        </div>
+    const sortAndFilterQuestions = (list) => {
+        if (!list || !Array.isArray(list)) return [];
+        let sorted = [...list];
+        switch (filter) {
+            case 'most_answered':
+                sorted.sort((a, b) => (b.answerCount || 0) - (a.answerCount || 0));
+                break;
+            case 'most_recent':
+            default:
+                sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                break;
+        }
+        return sorted.filter(q =>
+            q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            q.body.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (q.tags && q.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
+        );
+    };
 
-        {/* Questions List */}
-        <div className="bg-secondary rounded-xl border border-light">
-          {loading && (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-tertiary rounded-xl mb-4">
-                <div className="animate-spin w-6 h-6 border-2 border-blue border-t-transparent rounded-full"></div>
-              </div>
-              <p className="text-secondary">Loading questions...</p>
-            </div>
-          )}
-          
-          {error && (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-red bg-opacity-20 rounded-xl mb-4">
-                <span className="text-red text-xl">⚠️</span>
-              </div>
-              <p className="text-red font-semibold">Failed to load questions</p>
-              <button onClick={loadQuestions} className="btn-secondary mt-4">
-                Try Again
-              </button>
-            </div>
-          )}
-          
-          {!loading && !error && (
-            <>
-              {sortedQuestions && sortedQuestions.length > 0 ? (
-                <div className="divide-y divide-light">
-                  {sortedQuestions.map((question, index) => (
-                    <div key={question._id} className="p-6 hover:bg-tertiary transition-colors group">
-                      <div className="flex items-start gap-4">
-                        
-                        {/* Question Status */}
-                        <div className="flex flex-col items-center gap-1 min-w-[60px]">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold ${
-                            (question.answerCount || 0) > 0 
-                              ? 'bg-green bg-opacity-20 text-green' 
-                              : 'bg-orange bg-opacity-20 text-orange'
-                          }`}>
-                            {question.answerCount || 0}
-                          </div>
-                          <span className="text-xs text-muted">answers</span>
-                        </div>
+    const questionsList = questions || [];
+    const filteredQuestions = sortAndFilterQuestions(questionsList);
 
-                        {/* Question Content */}
-                        <div className="flex-1 min-w-0">
-                          <Link 
-                            to={`/forum/question/${question._id}`} 
-                            className="block group-hover:text-blue transition-colors"
-                          >
-                            <h3 className="text-lg font-semibold text-primary mb-2 group-hover:text-blue">
-                              {question.title}
-                            </h3>
-                          </Link>
-                          
-                          <div className="flex flex-wrap items-center gap-3 text-sm text-secondary mb-2">
-                            <span className="inline-flex items-center gap-1">
-                              <span>📚</span>
-                              <span className="text-blue font-medium">{question.courseCode}</span>
-                            </span>
-                            
-                            <span className="inline-flex items-center gap-1">
-                              <span>👤</span>
-                              <span>{question.authorId?.username || 'Anonymous'}</span>
-                            </span>
-                            
-                            <span className="inline-flex items-center gap-1">
-                              <span>🕐</span>
-                              <span>{new Date(question.createdAt).toLocaleDateString()}</span>
-                            </span>
-                          </div>
+    const handleQuestionClick = (questionId) => {
+        navigate(`/question/${questionId}`);
+    };
 
-                          {/* Tags/Categories */}
-                          <div className="flex flex-wrap gap-2">
-                            <span className="px-2 py-1 bg-blue bg-opacity-20 text-blue rounded-lg text-xs">
-                              {question.category || 'General'}
-                            </span>
-                            {(question.answerCount || 0) === 0 && (
-                              <span className="px-2 py-1 bg-orange bg-opacity-20 text-orange rounded-lg text-xs">
-                                Needs Answer
-                              </span>
-                            )}
-                          </div>
-                        </div>
+    const filterOptions = [
+        { value: 'most_recent', label: 'Most Recent' },
+        { value: 'most_answered', label: 'Most Answered' },
+    ];
 
-                        {/* Action Button */}
-                        <Link 
-                          to={`/forum/question/${question._id}`} 
-                          className="btn-secondary text-sm px-4 py-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          View
-                        </Link>
-                      </div>
+    return (
+        <div className="modern-forum">
+            <div className="container">
+                {/* Modern Header */}
+                <div className="modern-header">
+                    <div className="header-content">
+                        <h1 className="modern-title">Q&A Forum</h1>
+                        <p className="modern-subtitle">Ask questions, share knowledge, and help each other learn</p>
                     </div>
-                  ))}
+                    {user && (
+                        <Link to="/ask" className="ask-btn-modern">
+                            <PlusIcon />
+                            Ask Question
+                        </Link>
+                    )}
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-tertiary rounded-xl mb-4">
-                    <span className="text-2xl">💬</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-primary mb-2">No questions found</h3>
-                  <p className="text-secondary mb-6">
-                    {searchTerm ? 'Try different search terms' : 'Be the first to start a discussion!'}
-                  </p>
-                  {isAuthenticated && !searchTerm && (
-                    <Link to="/forum/ask" className="btn-primary">
-                      <span>❓</span>
-                      Ask First Question
-                    </Link>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
 
-        {/* Community Guidelines */}
-        {!isAuthenticated && (
-          <div className="mt-8 bg-secondary rounded-xl p-6 border border-light text-center">
-            <h3 className="text-lg font-semibold text-primary mb-2">Join the Discussion</h3>
-            <p className="text-secondary mb-4">Login to ask questions and help fellow students</p>
-            <div className="flex justify-center gap-4">
-              <Link to="/login" className="btn-primary">
-                Login
-              </Link>
-              <Link to="/register" className="btn-outline">
-                Sign Up
-              </Link>
+                {/* Modern Search Bar */}
+                <div className="search-bar-modern">
+                    <div className="search-wrapper">
+                        <SearchIcon />
+                        <input
+                            type="text"
+                            placeholder="Search questions, topics, or courses..."
+                            className="search-input-modern"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <select 
+                        className="filter-modern" 
+                        value={filter} 
+                        onChange={(e) => setFilter(e.target.value)}
+                    >
+                        {filterOptions.map(option => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Questions Content */}
+                {loading ? (
+                    <div className="loading-modern">
+                        <Spinner />
+                        <span>Loading questions...</span>
+                    </div>
+                ) : error ? (
+                    <div className="error-state">
+                        <h3>⚠️ Something went wrong</h3>
+                        <p>We couldn't load the questions. Please try refreshing the page.</p>
+                    </div>
+                ) : filteredQuestions.length > 0 ? (
+                    <div className="questions-modern">
+                        {filteredQuestions.map(q => (
+                            <article key={q._id} className="question-modern" onClick={() => handleQuestionClick(q._id)}>
+                                {/* Vote Section */}
+                                <div className="vote-panel">
+                                    <button 
+                                        className={`vote-modern thumbs-up ${q.upvotes?.includes(user?._id) ? 'active' : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleVote(q._id, 'upvote');
+                                        }}
+                                        title="Upvote this question"
+                                    >
+                                        👍
+                                    </button>
+                                    <span className="vote-score">
+                                        {(q.upvotes?.length || 0) - (q.downvotes?.length || 0)}
+                                    </span>
+                                    <button 
+                                        className={`vote-modern thumbs-down ${q.downvotes?.includes(user?._id) ? 'active' : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleVote(q._id, 'downvote');
+                                        }}
+                                        title="Downvote this question"
+                                    >
+                                        👎
+                                    </button>
+                                </div>
+
+                                {/* Question Content */}
+                                <div className="question-body">
+                                    <div className="question-header-modern">
+                                        <h3 className="title-modern">{q.title}</h3>
+                                        <span className="course-badge">{q.courseCode}</span>
+                                    </div>
+
+                                    {q.tags && q.tags.length > 0 && (
+                                        <div className="tags-modern">
+                                            {q.tags.map(tag => (
+                                                <span key={tag} className="tag-modern">{tag}</span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="question-footer">
+                                        <div className="author-modern">
+                                            <span className="author-name-modern">{q.authorId?.name || 'Anonymous'}</span>
+                                            <span className="time-modern">{formatDistanceToNow(new Date(q.createdAt), { addSuffix: true })}</span>
+                                        </div>
+                                        
+                                        <div className="stats-modern">
+                                            <span className="stat-modern">
+                                                💬 {q.answerCount || 0} answers
+                                            </span>
+                                            <span className="stat-modern">
+                                                👁️ {q.viewCount || 0} views
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="empty-modern">
+                        <div className="empty-icon">🤔</div>
+                        <h3>No questions yet</h3>
+                        <p>Be the first to start a discussion!</p>
+                        {user && (
+                            <Link to="/ask" className="btn-minimal btn-minimal-primary">
+                                Ask the First Question
+                            </Link>
+                        )}
+                    </div>
+                )}
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default QuestionList;

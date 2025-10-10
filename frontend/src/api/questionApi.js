@@ -16,8 +16,17 @@ export const fetchQuestionDetails = (questionId) => {
   return api.get(`${QUESTION_URL}/${questionId}`);
 };
 
+// --- Voting ---
+export const voteQuestion = (questionId, voteType) => {
+  return api.post(`${QUESTION_URL}/${questionId}/vote`, { voteType });
+};
+
+export const voteAnswer = (answerId, voteType) => {
+  return api.post(`${QUESTION_URL}/answers/${answerId}/vote`, { voteType });
+};
+
 // --- Answer CRUD ---
 export const postNewAnswer = (questionId, answerData) => {
-  // answerData should contain { body }
+  // answerData should contain { content }
   return api.post(`${QUESTION_URL}/${questionId}/answers`, answerData);
 };

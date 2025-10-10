@@ -1,5 +1,4 @@
 const User = require('../models/User.model');
-const Resource = require('../models/Resource.model');
 const Question = require('../models/Question.model');
 const Answer = require('../models/Answer.model');
 
@@ -7,59 +6,54 @@ const Answer = require('../models/Answer.model');
 const getLeaderboard = async (req, res) => {
   try {
     const { 
-      type = 'reputation', // 'reputation', 'credits', 'uploads', 'questions', 'answers'
-      limit = 20,
-      university,
-      timeframe = 'all' // 'all', 'week', 'month'
+      type = 'reputation', // 'reputation', 'questions', 'answers'
+      limit = 10,
+      page = 1
     } = req.query;
 
     let sortField = {};
     switch (type) {
-      case 'credits':
-        sortField = { credits: -1 };
+      case 'questions':
+        sortField = { questionsCount: -1 };
         break;
-      case 'uploads':
-        sortField = { uploadCount: -1 };
+      case 'answers':
+        sortField = { answersCount: -1 };
         break;
       case 'reputation':
       default:
         sortField = { reputation: -1 };
+        break;
     }
 
-    const filter = { isApproved: true };
-    if (university) {
-      filter.university = new RegExp(university, 'i');
-    }
-
-    // Get top users
-    const topUsers = await User.find(filter)
-      .select('name university degree credits reputation role joinedAt')
+    // Get top users with pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const topUsers = await User.find({ isApproved: true })
       .sort(sortField)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .skip(skip)
+      .select('name university degree reputation role joinedAt avatar');
 
-    // Get additional stats for each user
+    // Get detailed stats for each user
     const leaderboardData = await Promise.all(
       topUsers.map(async (user, index) => {
-        const [resourceCount, questionCount, answerCount] = await Promise.all([
-          Resource.countDocuments({ uploaderId: user._id, status: 'approved' }),
+        const [questionCount, answerCount] = await Promise.all([
           Question.countDocuments({ authorId: user._id }),
           Answer.countDocuments({ authorId: user._id })
         ]);
 
         return {
-          rank: index + 1,
+          rank: skip + index + 1,
           user: {
             id: user._id,
             name: user.name,
             university: user.university,
             degree: user.degree,
             role: user.role,
-            joinedAt: user.joinedAt
+            joinedAt: user.joinedAt,
+            avatar: user.avatar
           },
           stats: {
             reputation: user.reputation,
-            credits: user.credits,
-            resourcesUploaded: resourceCount,
             questionsAsked: questionCount,
             answersGiven: answerCount
           }
@@ -68,9 +62,8 @@ const getLeaderboard = async (req, res) => {
     );
 
     // Get platform statistics
-    const [totalUsers, totalResources, totalQuestions, totalAnswers] = await Promise.all([
+    const [totalUsers, totalQuestions, totalAnswers] = await Promise.all([
       User.countDocuments({ isApproved: true }),
-      Resource.countDocuments({ status: 'approved' }),
       Question.countDocuments(),
       Answer.countDocuments()
     ]);
@@ -80,19 +73,18 @@ const getLeaderboard = async (req, res) => {
       leaderboard: leaderboardData,
       platformStats: {
         totalUsers,
-        totalResources,
         totalQuestions,
         totalAnswers
       },
-      filters: {
-        type,
-        university: university || 'All',
-        timeframe,
-        limit: parseInt(limit)
+      pagination: {
+        currentPage: parseInt(page),
+        limit: parseInt(limit),
+        totalUsers
       }
     });
+
   } catch (error) {
-    console.error('Leaderboard error:', error);
+    console.error('Error fetching leaderboard:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch leaderboard',
@@ -101,15 +93,15 @@ const getLeaderboard = async (req, res) => {
   }
 };
 
-// Get User Stats
+// Get user-specific leaderboard stats
 const getUserStats = async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.params.userId || req.user.userId;
     
-    // Check if user exists and is approved
-    const user = await User.findOne({ _id: userId, isApproved: true })
-      .select('name university degree credits reputation role joinedAt');
-    
+    // Get user details
+    const user = await User.findById(userId)
+      .select('name university degree reputation role joinedAt avatar');
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -117,120 +109,73 @@ const getUserStats = async (req, res) => {
       });
     }
 
-    // Get user's content statistics
-    const [
-      resourceCount,
-      questionCount,
-      answerCount,
-      acceptedAnswerCount,
-      totalResourceVotes,
-      totalQuestionVotes,
-      totalAnswerVotes
-    ] = await Promise.all([
-      Resource.countDocuments({ uploaderId: userId, status: 'approved' }),
+    // Get user's activity counts
+    const [questionCount, answerCount] = await Promise.all([
       Question.countDocuments({ authorId: userId }),
-      Answer.countDocuments({ authorId: userId }),
-      Answer.countDocuments({ authorId: userId, isAccepted: true }),
-      
-      // Calculate total votes received on resources
-      Resource.aggregate([
-        { $match: { uploaderId: user._id } },
-        { 
-          $project: { 
-            voteCount: { 
-              $subtract: [
-                { $size: "$upvotes" }, 
-                { $size: "$downvotes" }
-              ] 
-            } 
-          } 
-        },
-        { $group: { _id: null, totalVotes: { $sum: "$voteCount" } } }
-      ]).then(result => result.length > 0 ? result[0].totalVotes : 0),
-      
+      Answer.countDocuments({ authorId: userId })
+    ]);
+
+    // Calculate total votes received on questions and answers
+    const [totalQuestionVotes, totalAnswerVotes] = await Promise.all([
       // Calculate total votes received on questions
       Question.aggregate([
         { $match: { authorId: user._id } },
-        { 
-          $project: { 
-            voteCount: { 
-              $subtract: [
-                { $size: "$upvotes" }, 
-                { $size: "$downvotes" }
-              ] 
-            } 
-          } 
-        },
-        { $group: { _id: null, totalVotes: { $sum: "$voteCount" } } }
-      ]).then(result => result.length > 0 ? result[0].totalVotes : 0),
-      
+        { $group: { _id: null, totalVotes: { $sum: { $add: ['$upvotes', '$downvotes'] } } } }
+      ]),
       // Calculate total votes received on answers
       Answer.aggregate([
         { $match: { authorId: user._id } },
-        { 
-          $project: { 
-            voteCount: { 
-              $subtract: [
-                { $size: "$upvotes" }, 
-                { $size: "$downvotes" }
-              ] 
-            } 
-          } 
-        },
-        { $group: { _id: null, totalVotes: { $sum: "$voteCount" } } }
-      ]).then(result => result.length > 0 ? result[0].totalVotes : 0)
+        { $group: { _id: null, totalVotes: { $sum: { $add: ['$upvotes', '$downvotes'] } } } }
+      ])
     ]);
 
-    // Get user's rank based on reputation
-    const higherReputationCount = await User.countDocuments({
-      reputation: { $gt: user.reputation },
-      isApproved: true
-    });
-    const userRank = higherReputationCount + 1;
+    const totalVotesOnQuestions = totalQuestionVotes[0]?.totalVotes || 0;
+    const totalVotesOnAnswers = totalAnswerVotes[0]?.totalVotes || 0;
 
-    // Get recent activity (last 10 resources and questions)
-    const [recentResources, recentQuestions] = await Promise.all([
-      Resource.find({ uploaderId: userId, status: 'approved' })
-        .select('title course createdAt')
-        .sort({ createdAt: -1 })
-        .limit(5),
-      Question.find({ authorId: userId })
-        .select('title course createdAt status')
-        .sort({ createdAt: -1 })
-        .limit(5)
-    ]);
+    // Get user's ranking
+    const userRank = await User.countDocuments({
+      isApproved: true,
+      reputation: { $gt: user.reputation }
+    }) + 1;
+
+    // Get recent activity (last 10 questions)
+    const recentQuestions = await Question.find({ authorId: userId })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('title content createdAt upvotes downvotes')
+      .populate('tags', 'name');
 
     res.json({
       success: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        university: user.university,
-        degree: user.degree,
-        role: user.role,
-        joinedAt: user.joinedAt
-      },
-      stats: {
-        reputation: user.reputation,
-        credits: user.credits,
-        rank: userRank,
-        resourcesUploaded: resourceCount,
-        questionsAsked: questionCount,
-        answersGiven: answerCount,
-        acceptedAnswers: acceptedAnswerCount,
-        totalVotesReceived: totalResourceVotes + totalQuestionVotes + totalAnswerVotes,
-        acceptanceRate: questionCount > 0 ? Math.round((acceptedAnswerCount / answerCount) * 100) : 0
-      },
-      recentActivity: {
-        resources: recentResources,
-        questions: recentQuestions
+      userStats: {
+        user: {
+          id: user._id,
+          name: user.name,
+          university: user.university,
+          degree: user.degree,
+          role: user.role,
+          reputation: user.reputation,
+          joinedAt: user.joinedAt,
+          avatar: user.avatar
+        },
+        stats: {
+          reputation: user.reputation,
+          questionsAsked: questionCount,
+          answersGiven: answerCount,
+          totalVotesReceived: totalVotesOnQuestions + totalVotesOnAnswers,
+          rank: userRank
+        },
+        recentActivity: {
+          questions: recentQuestions
+        }
       }
     });
+
   } catch (error) {
-    console.error('User stats error:', error);
+    console.error('Error fetching user stats:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch user stats',
+      message: 'Failed to fetch user statistics',
       error: error.message
     });
   }

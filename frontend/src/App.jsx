@@ -9,9 +9,9 @@ import AuthLogin from './pages/Auth/Login.jsx';
 import AuthRegister from './pages/Auth/Register.jsx'; 
 import ForgotPasswordPage from './pages/Auth/ForgotPassword.jsx';
 import ResetPasswordPage from './pages/Auth/ResetPassword.jsx';
-import ResourceDetails from './pages/Resources/ResourceDetails.jsx';
-import ResourceList from './pages/Resources/ResourceList.jsx'; 
-import ResourceUpload from './pages/Resources/ResourceUpload.jsx';
+import Home from './pages/Home.jsx';
+
+// Forum Pages
 import QuestionList from './pages/Forum/QuestionList.jsx';
 import QuestionDetails from './pages/Forum/QuestionDetails.jsx';
 import AskQuestion from './pages/Forum/AskQuestion.jsx';
@@ -20,6 +20,7 @@ import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 
 import ProfilePage from './pages/Profile.jsx';
+import EditProfile from './pages/Profile/EditProfile.jsx';
 import AdminUserApprovals from './components/admin/AdminUserApprovals.jsx';
 import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
 
@@ -28,20 +29,14 @@ function App() {
   const { isDarkMode } = useSettings();
   
   return (
-    <div 
-      className="flex flex-col min-h-screen font-sans"
-      style={{
-        backgroundColor: 'var(--bg-primary)',
-        color: 'var(--text-primary)'
-      }}
-    >
+    <div className="app-container">
       
       <Header /> 
       
-      <main className="flex-grow" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <main className="main-content">
         
         <Routes>
-          <Route path="/" element={<ResourceList />} />
+          <Route path="/" element={<Home />} />
           
           {/* Authentication Routes */}
           <Route path="/login" element={<AuthLogin />} />
@@ -49,11 +44,6 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-          {/* Public Routes */}
-          <Route path="/resources" element={<ResourceList />} />
-          <Route path="/resource/:id" element={<ResourceDetails />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          
           {/* Q&A Forum Routes */}
           <Route path="/forum" element={<QuestionList />} />
           <Route path="/questions" element={<QuestionList />} />
@@ -67,6 +57,9 @@ function App() {
             } 
           />
           
+          {/* Leaderboard Route */}
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          
           {/* Protected User Routes */}
           <Route 
             path="/profile" 
@@ -76,8 +69,14 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          
-          <Route path="/upload" element={<ProtectedRoute><ResourceUpload /></ProtectedRoute>} />
+          <Route 
+            path="/edit-profile" 
+            element={
+              <ProtectedRoute>
+                <EditProfile />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Admin Routes */}
           <Route 

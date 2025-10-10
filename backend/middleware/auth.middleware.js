@@ -21,7 +21,7 @@ const authenticateToken = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid token'
+        message: 'Invalid token - user not found'
       });
     }
 
@@ -32,13 +32,29 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    req.user = user;
+    // Ensure consistent user ID reference
+    req.user = {
+      ...user.toObject(),
+      id: user._id.toString()
+    };
+    
     next();
   } catch (error) {
     console.error('Token verification error:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token format'
+      });
+    } else if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
     res.status(401).json({
       success: false,
-      message: 'Invalid token'
+      message: 'Token verification failed'
     });
   }
 };

@@ -41,3 +41,11 @@ export const approveUser = (userId) => {
 export const rejectUser = (userId, reason) => {
   return api.put(`${AUTH_URL}/reject-user/${userId}`, { reason });
 };
+
+export const getUserProfile = () => {
+  return api.get(`${AUTH_URL}/profile`);
+};
+
+export const updateUserProfile = (profileData) => {
+  return api.put(`${AUTH_URL}/profile`, profileData);
+};

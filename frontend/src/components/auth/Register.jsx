@@ -67,7 +67,7 @@ const Register = () => {
     if (file && file.type.startsWith('image/')) {
       setStudentIdFile(file);
     } else if (file) {
-      setError('Please upload a valid image file for Student ID verification');
+      setError('Please select a valid image file for Student ID verification');
     }
   };
 
@@ -87,7 +87,7 @@ const Register = () => {
 
     // Validate required file
     if (!studentIdFile) {
-      setError('Please upload your Student ID document for verification');
+      setError('Please provide your Student ID document for verification');
       return;
     }
 

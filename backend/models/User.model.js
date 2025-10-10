@@ -12,7 +12,8 @@ const userSchema = new mongoose.Schema({
     reputation: { type: Number, default: 0, min: 0 },
     role: { type: String, enum: ['student', 'admin'], default: 'student' },
     isApproved: { type: Boolean, default: false },
-    profilePicture: { type: String, default: null },
+    avatar: { type: String, default: '👤' },
+    bio: { type: String, default: '', maxlength: 500 },
     joinedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 

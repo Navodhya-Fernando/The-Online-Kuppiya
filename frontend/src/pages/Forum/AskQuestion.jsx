@@ -1,83 +1,122 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { postNewQuestion } from '../../api/questionApi';
 import useApi from '../../hooks/useApi';
+import { postNewQuestion } from '../../api/questionApi';
+import { Spinner } from '../../components/shared/Spinner';
 
 const AskQuestionPage = () => {
-  const navigate = useNavigate();
-  const { loading, error, execute: handlePost } = useApi(postNewQuestion);
-  const [formData, setFormData] = useState({
-    title: '',
-    body: '',
-    courseCode: '',
-    tags: ''
-  });
-  const [message, setMessage] = useState('');
+    const [title, setTitle] = useState('');
+    const [body, setBody] = useState('');
+    const [courseCode, setCourseCode] = useState('');
+    const [tags, setTags] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+    const navigate = useNavigate();
+    const { loading, error, execute: doAskQuestion } = useApi(postNewQuestion);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage('');
-    
-    try {
-      const response = await handlePost(formData);
-      setMessage('Question posted successfully!');
-      // Navigate to the new question's detail page
-      navigate(`/question/${response._id}`); 
-    } catch (err) {
-      // Error handled by useApi, but we display the message
-      setMessage(`Post failed: ${error || 'An error occurred.'}`);
-    }
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const questionData = {
+            title,
+            body,
+            courseCode,
+            tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        };
 
-  return (
-    <div className="ask-question-page container max-w-2xl mx-auto p-8 bg-white shadow-xl rounded-lg mt-10">
-      <h1 className="text-3xl font-bold mb-6 text-center text-primary">Ask a New Question</h1>
-      <form onSubmit={handleSubmit}>
-        <input 
-          className="form-control" 
-          name="title" 
-          placeholder="A brief, descriptive title (e.g., Why does MongoDB use JSON?)" 
-          value={formData.title} 
-          onChange={handleChange} 
-          required 
-        />
-        <textarea 
-          className="form-control" 
-          name="body" 
-          placeholder="Explain your problem or question in detail." 
-          value={formData.body} 
-          onChange={handleChange} 
-          required 
-          rows="10" 
-        />
-        <input 
-          className="form-control" 
-          name="courseCode" 
-          placeholder="Course Code (e.g., ADDS242F - Optional)" 
-          value={formData.courseCode} 
-          onChange={handleChange} 
-        />
-        <input 
-          className="form-control" 
-          name="tags" 
-          placeholder="Tags (comma-separated: react, mongodb, node - Optional)" 
-          value={formData.tags} 
-          onChange={handleChange} 
-        />
-        
-        <button type="submit" className="btn btn-primary w-full mt-4" disabled={loading}>
-          {loading ? 'Posting...' : 'Post Question'}
-        </button>
-      </form>
-      
-      {message && <p className={`mt-4 text-center font-semibold ${error ? 'text-red-600' : 'text-green-600'}`}>{message}</p>}
-    </div>
-  );
+        try {
+            const data = await doAskQuestion(questionData);
+            if (data && data.success && data.question) {
+                navigate(`/question/${data.question._id}`);
+            } else if (data && data._id) {
+                // In case the backend returns the question directly
+                navigate(`/question/${data._id}`);
+            } else {
+                // Fallback navigation to forum list
+                navigate('/forum');
+            }
+        } catch (err) {
+            // Error is already handled by useApi hook and displayed
+            console.error("Failed to post question:", err);
+        }
+    };
+
+    return (
+        <div className="ask-question-page">
+            <div className="container">
+                <div className="ask-question-card">
+                    <div className="ask-question-header">
+                        <h1 className="page-title">Ask a Public Question</h1>
+                        <p className="page-subtitle">Get help from the community by asking a clear and detailed question.</p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="ask-question-form">
+                        <div className="form-section">
+                            <div className="form-field">
+                                <label htmlFor="title" className="field-label">Title</label>
+                                <input
+                                    id="title"
+                                    type="text"
+                                    className="field-input"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder="e.g., How do I implement authentication in a MERN stack app?"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-field">
+                                <label htmlFor="body" className="field-label">Body</label>
+                                <textarea
+                                    id="body"
+                                    className="field-textarea"
+                                    value={body}
+                                    onChange={(e) => setBody(e.target.value)}
+                                    placeholder="Include all the information someone would need to answer your question. You can use Markdown for formatting."
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-grid">
+                                <div className="form-field">
+                                    <label htmlFor="courseCode" className="field-label">Subject / Course Code</label>
+                                    <input
+                                        id="courseCode"
+                                        type="text"
+                                        className="field-input"
+                                        value={courseCode}
+                                        onChange={(e) => setCourseCode(e.target.value)}
+                                        placeholder="e.g., SE3040"
+                                    />
+                                </div>
+
+                                <div className="form-field">
+                                    <label htmlFor="tags" className="field-label">Tags</label>
+                                    <input
+                                        id="tags"
+                                        type="text"
+                                        className="field-input"
+                                        value={tags}
+                                        onChange={(e) => setTags(e.target.value)}
+                                        placeholder="e.g., react, nodejs"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {error && <div className="error-alert">{`Error: ${error}`}</div>}
+
+                        <div className="form-actions">
+                            <button type="button" className="btn-secondary" onClick={() => navigate(-1)}>
+                                Cancel
+                            </button>
+                            <button type="submit" className="btn-primary" disabled={loading}>
+                                {loading ? <Spinner size="sm" /> : 'Post Your Question'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default AskQuestionPage;

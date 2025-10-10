@@ -28,7 +28,7 @@ const AdminDashboard = () => {
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4">Admin Dashboard</h1>
         <p className="text-gray-600 mb-6">
-          Welcome, {user.firstName || user.username}! Manage user registrations and platform settings.
+          Welcome, {user.firstName || user.name}! Manage user registrations and platform settings.
         </p>
 
         {/* Quick Stats Cards */}
