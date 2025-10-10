@@ -1,3 +1,5 @@
+// navodhya-fernando/the-online-kuppiya/.../frontend/src/components/admin/AdminUserApprovals.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getPendingUsers, approveUser, rejectUser } from '../../api/authApi';

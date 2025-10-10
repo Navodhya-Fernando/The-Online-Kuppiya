@@ -1,3 +1,5 @@
+// navodhya-fernando/the-online-kuppiya/The-Online-Kuppiya-5966a041738e121b3133724b3e1bf39b3e882014/frontend/src/api/authApi.js
+
 import api from './axios';
 
 const AUTH_URL = '/auth';
@@ -33,11 +35,11 @@ export const getPendingUsers = () => {
 };
 
 export const approveUser = (userId) => {
-  return api.put(`${AUTH_URL}/approve-user/${userId}`);
+  return api.put(`${AUTH_URL}/approve/${userId}`); // FIX: Matches backend route
 };
 
 export const rejectUser = (userId, reason) => {
-  return api.put(`${AUTH_URL}/reject-user/${userId}`, { reason });
+  return api.delete(`${AUTH_URL}/reject/${userId}`, { data: { reason } }); // FIX: Matches backend route
 };
 
 export const getUserProfile = () => {
