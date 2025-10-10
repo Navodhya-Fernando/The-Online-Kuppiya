@@ -223,6 +223,14 @@ body {
     .mobile-menu-button {
         display: flex;
     }
+    
+    .header-minimal {
+        padding: 0 var(--space-md);
+    }
+    
+    .site-name {
+        font-size: var(--font-size-lg);
+    }
 }
 
 .mobile-menu {
@@ -1916,11 +1924,13 @@ textarea:focus {
     
     .hero-subtitle {
         font-size: var(--font-size-lg);
+        padding: 0 var(--space-md);
     }
     
     .hero-actions {
         flex-direction: column;
         align-items: center;
+        gap: var(--space-md);
     }
     
     .hero-btn {
@@ -1930,6 +1940,7 @@ textarea:focus {
     
     .question-grid {
         gap: var(--space-lg);
+        grid-template-columns: 1fr;
     }
     
     .question-card-container {
@@ -1944,5 +1955,59 @@ textarea:focus {
     .tab-button {
         flex: 1;
         text-align: center;
+        padding: var(--space-sm) var(--space-md);
+        font-size: var(--font-size-sm);
+    }
+    
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-sm);
+    }
+    
+    .section-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .question-meta {
+        flex-wrap: wrap;
+        gap: var(--space-xs);
+        font-size: var(--font-size-xs);
+    }
+    
+    .hero-section {
+        padding: var(--space-xl) 0;
+    }
+    
+    .content-section {
+        padding: var(--space-lg) 0;
+    }
+    
+    .container {
+        padding: 0 var(--space-md);
+    }
+    
+    .cta-section {
+        padding: var(--space-xl) var(--space-md);
+        margin-top: var(--space-xl);
+    }
+    
+    .cta-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .footer-minimal .container {
+        grid-template-columns: 1fr;
+        gap: var(--space-lg);
+        text-align: center;
+    }
+    
+    .footer-section .logo-container {
+        justify-content: center;
+    }
+    
+    .footer-section .logo-container img {
+        width: 180px;
+        height: 32px;
     }
 }

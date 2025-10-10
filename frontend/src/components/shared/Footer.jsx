@@ -28,7 +28,7 @@ const Footer = () => {
         <div className="footer-section">
           <div className="logo-container">
             <img 
-              src="/src/assets/Logo.png" 
+              src={`${import.meta.env.BASE_URL}Logo.png`}
               alt="The Online Kuppiya Logo"
             />
           </div>

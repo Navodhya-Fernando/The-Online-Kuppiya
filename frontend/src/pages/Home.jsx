@@ -25,11 +25,6 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('activity');
-  const [notifications] = useState([
-    { id: 1, type: 'answer', message: 'New answer to your question about React Hooks', time: '2 hours ago' },
-    { id: 2, type: 'upvote', message: 'Your answer received 5 upvotes', time: '4 hours ago' },
-    { id: 3, type: 'question', message: 'New question in Computer Science category', time: '1 day ago' }
-  ]);
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -115,42 +110,7 @@ const Home = () => {
       {/* Content Section with Tabs */}
       <div className="content-section">
         <div className="container">
-          {isAuthenticated && (
-            <div className="tab-container">
-              <div className="tab-buttons">
-                <button
-                  onClick={() => setActiveTab('activity')}
-                  className={`tab-button ${activeTab === 'activity' ? 'active' : ''}`}
-                >
-                  Recent Activity
-                </button>
-                <button
-                  onClick={() => setActiveTab('notifications')}
-                  className={`tab-button ${activeTab === 'notifications' ? 'active' : ''}`}
-                >
-                  Notifications ({notifications.length})
-                </button>
-              </div>
-            </div>
-          )}
 
-          {/* Tab Content */}
-          {isAuthenticated && activeTab === 'notifications' && (
-            <div className="notification-panel">
-              <h2 className="section-title">Your Notifications</h2>
-              <div className="notification-list">
-                {notifications.map(notification => (
-                  <div key={notification.id} className="notification-item">
-                    <div className={`notification-dot ${notification.type}`} />
-                    <div className="notification-content">
-                      <p className="notification-message">{notification.message}</p>
-                      <p className="notification-time">{notification.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="question-grid">
             {/* Recent Questions */}
