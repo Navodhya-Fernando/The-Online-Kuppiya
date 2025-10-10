@@ -4,7 +4,7 @@
   "description": "Backend API for The Online Kuppiya - A unified platform for Sri Lankan university students to share resources and collaborate",
   "main": "server.js",
   "scripts": {
-    "start": "doppler run -- node server.js",
+    "start": "node server.js",
     "dev": "doppler run -- nodemon server.js",
     "start:local": "node server.js",
     "dev:local": "nodemon server.js",
