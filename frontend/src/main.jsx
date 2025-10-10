@@ -26,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter
+        basename="/The-Online-Kuppiya"
         future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true
