@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSettings } from '../../contexts/SettingsContext';
 
 const HomeIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,8 +52,21 @@ const AdminIcon = () => (
   </svg>
 );
 
+const SunIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v2m0 14v2m8.485-10h-2M5.515 12h-2M18.364 5.636l-1.414 1.414M7.05 16.95l-1.414 1.414m12.728 0l-1.414-1.414M7.05 7.05 5.636 5.636M12 8a4 4 0 100 8 4 4 0 000-8z" />
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 1018.354 20.354z" />
+  </svg>
+);
+
 const Header = () => {
   const { isAuthenticated, user } = useAuth();
+  const { theme, toggleTheme } = useSettings();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -70,32 +84,50 @@ const Header = () => {
   const userInitials = user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 
   return (
-    <header className="header-minimal">
-      <div className="container">
-        <Link to="/" className="site-name">
-          The Online Kuppiya
+    <header className="site-header">
+      <div className="container header-shell">
+        <Link to="/" className="brand-link" onClick={() => setIsMenuOpen(false)}>
+          <span className="brand-mark">OK</span>
+          <span className="brand-copy">
+            <span className="site-name">The Online Kuppiya</span>
+            <span className="brand-tag">Student-led Q&A community</span>
+          </span>
         </Link>
-        
-        <nav className="nav-minimal">
-          {navItems.map(item => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`nav-link-minimal ${location.pathname === item.to ? 'active' : ''}`}
-              >
-                <Icon />
-                <span>{item.text}</span>
-              </Link>
-            );
-          })}
-        </nav>
+
+        <div className="header-desktop">
+          <span className="header-status">Live community</span>
+          <nav className="nav-minimal">
+            {navItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`nav-link-minimal ${location.pathname === item.to ? 'active' : ''}`}
+                >
+                  <Icon />
+                  <span>{item.text}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
         <div className="header-actions">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="btn-minimal theme-toggle"
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+          </button>
+
           {isAuthenticated ? (
-            <Link to="/profile" className="avatar-minimal" title={`Profile - ${user?.name}`}>
-              {userInitials}
+            <Link to="/ask" className="btn-minimal btn-minimal-primary header-cta">
+              <QuestionIcon />
+              <span>Ask now</span>
             </Link>
           ) : (
             <Link to="/login" className="btn-minimal">
@@ -104,9 +136,17 @@ const Header = () => {
             </Link>
           )}
 
+          {isAuthenticated && (
+            <Link to="/profile" className="avatar-minimal" title={`Profile - ${user?.name}`}>
+              {userInitials}
+            </Link>
+          )}
+
           <button
+            type="button"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="mobile-menu-button btn-minimal"
+            aria-label="Toggle navigation menu"
           >
             {isMenuOpen ? <CloseIcon /> : <MenuIcon />}
           </button>
@@ -129,6 +169,11 @@ const Header = () => {
               </Link>
             );
           })}
+          {!isAuthenticated && (
+            <Link to="/register" onClick={() => setIsMenuOpen(false)} className="btn-minimal btn-minimal-primary">
+              Join the community
+            </Link>
+          )}
         </div>
       )}
     </header>

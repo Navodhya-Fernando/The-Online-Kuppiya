@@ -110,7 +110,7 @@ const Register = () => {
 
       if (result.success) {
         if (result.requiresApproval) {
-          setMessage('🎉 Registration successful! Your account is pending admin approval. You will receive an email notification once your account is approved and you can start using the platform.');
+          setMessage('🎉 Registration successful! Check your inbox to verify your email, then wait for admin approval.');
           setTimeout(() => {
             window.location.href = '/login?message=registration-pending';
           }, 5000);
@@ -189,14 +189,6 @@ const Register = () => {
               value={formData.email}
               onChange={handleInputChange}
               required
-            />
-            <input
-              className="form-control"
-              type="tel"
-              name="whatsappNumber"
-              placeholder="WhatsApp Number (optional)"
-              value={formData.whatsappNumber}
-              onChange={handleInputChange}
             />
           </div>
 

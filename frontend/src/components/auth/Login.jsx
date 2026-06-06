@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link, useSearchParams } from 'react-router-dom';
+import { resendVerificationEmail } from '../../api/authApi';
 
 const Login = () => {
   const { login } = useAuth();
@@ -9,13 +10,35 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verificationEmailLoading, setVerificationEmailLoading] = useState(false);
+  const [verificationEmailSent, setVerificationEmailSent] = useState(false);
 
   useEffect(() => {
     const messageParam = searchParams.get('message');
     if (messageParam === 'registration-pending') {
-      setMessage('✅ Registration successful! Your account is pending admin approval. You will be notified via email once approved.');
+      setMessage('✅ Registration successful! Check your inbox to verify your email, then wait for admin approval.');
     }
   }, [searchParams]);
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      setMessage('Enter your email address first, then resend the verification link.');
+      return;
+    }
+
+    setVerificationEmailLoading(true);
+    setMessage('');
+
+    try {
+      await resendVerificationEmail(email);
+      setVerificationEmailSent(true);
+      setMessage('✅ Verification email sent. Please check your inbox and spam folder.');
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Failed to resend the verification email.');
+    } finally {
+      setVerificationEmailLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,6 +98,23 @@ const Login = () => {
             <span className="font-medium">{message}</span>
           </div>
         </div>
+      )}
+
+      {message.includes('verify your email') && (
+        <button
+          type="button"
+          onClick={handleResendVerification}
+          disabled={verificationEmailLoading || verificationEmailSent}
+          className="mb-6 w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200"
+          style={{
+            backgroundColor: verificationEmailSent ? 'var(--bg-hover)' : 'var(--accent-blue)',
+            color: 'var(--text-primary)',
+            border: 'none',
+            cursor: verificationEmailLoading || verificationEmailSent ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {verificationEmailLoading ? 'Sending verification email...' : verificationEmailSent ? 'Verification email sent' : 'Resend verification email'}
+        </button>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">

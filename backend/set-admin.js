@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 const User = require('./models/User.model');
+const loadEnv = require('./config/env');
+
+loadEnv();
 
 // Get email from command line argument
 const targetEmail = process.argv[2];

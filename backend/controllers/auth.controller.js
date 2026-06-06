@@ -1,8 +1,23 @@
 const User = require('../models/User.model');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendApprovalEmail,
+} = require('../services/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
+
+const getAppUrl = () => {
+  const configuredUrl = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || process.env.APP_URL || 'http://localhost:3003';
+  return configuredUrl.split(',')[0].trim().replace(/\/$/, '');
+};
+
+const createSecureToken = () => crypto.randomBytes(32).toString('hex');
+
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -31,6 +46,8 @@ const register = async (req, res) => {
       });
     }
 
+    const verificationToken = createSecureToken();
+
     // Create new user
     const user = new User({
       name,
@@ -39,10 +56,25 @@ const register = async (req, res) => {
       university,
       degree,
       year: parseInt(year),
-      isApproved: false // Require admin approval
+      isApproved: false,
+      emailVerified: false,
+      emailVerificationTokenHash: hashToken(verificationToken),
+      emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
     });
 
     await user.save();
+
+    let verificationEmailSent = false;
+    try {
+      await sendVerificationEmail({
+        to: user.email,
+        name: user.name,
+        verificationUrl: `${getAppUrl()}/verify-email/${verificationToken}`,
+      });
+      verificationEmailSent = true;
+    } catch (emailError) {
+      console.error('Verification email error:', emailError.message);
+    }
 
     // Send response (don't include password or token for unapproved users)
     const userResponse = {
@@ -53,14 +85,19 @@ const register = async (req, res) => {
       degree: user.degree,
       year: user.year,
       role: user.role,
-      isApproved: user.isApproved
+      isApproved: user.isApproved,
+      emailVerified: user.emailVerified
     };
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful! Your account is pending admin approval. You will be notified once approved.',
+      message: verificationEmailSent
+        ? 'Registration successful! Check your inbox to verify your email, then wait for admin approval.'
+        : 'Registration successful! Your account is pending verification and admin approval.',
       user: userResponse,
-      requiresApproval: true
+      requiresApproval: true,
+      requiresEmailVerification: true,
+      verificationEmailSent
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -103,6 +140,15 @@ const login = async (req, res) => {
       });
     }
 
+    if (!user.emailVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Please verify your email address before logging in.',
+        emailVerified: false,
+        resendVerification: true
+      });
+    }
+
     // Check if user is approved
     if (!user.isApproved) {
       return res.status(403).json({
@@ -126,7 +172,8 @@ const login = async (req, res) => {
       credits: user.credits,
       reputation: user.reputation,
       role: user.role,
-      isApproved: user.isApproved
+      isApproved: user.isApproved,
+      emailVerified: user.emailVerified
     };
 
     res.json({
@@ -140,6 +187,207 @@ const login = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Login failed',
+      error: error.message
+    });
+  }
+};
+
+const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification token is required'
+      });
+    }
+
+    const tokenHash = hashToken(token);
+    const user = await User.findOne({
+      emailVerificationTokenHash: tokenHash,
+      emailVerificationExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification link is invalid or has expired'
+      });
+    }
+
+    user.emailVerified = true;
+    user.emailVerifiedAt = new Date();
+    user.emailVerificationTokenHash = null;
+    user.emailVerificationExpires = null;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Email verified successfully'
+    });
+  } catch (error) {
+    console.error('Email verification error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to verify email',
+      error: error.message
+    });
+  }
+};
+
+const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If an account exists, a verification email has been sent.'
+      });
+    }
+
+    if (user.emailVerified) {
+      return res.json({
+        success: true,
+        message: 'Email is already verified.'
+      });
+    }
+
+    const verificationToken = createSecureToken();
+    user.emailVerificationTokenHash = hashToken(verificationToken);
+    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await user.save();
+
+    try {
+      await sendVerificationEmail({
+        to: user.email,
+        name: user.name,
+        verificationUrl: `${getAppUrl()}/verify-email/${verificationToken}`,
+      });
+    } catch (emailError) {
+      console.error('Resend verification email error:', emailError.message);
+    }
+
+    return res.json({
+      success: true,
+      message: 'If an account exists, a verification email has been sent.'
+    });
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to resend verification email',
+      error: error.message
+    });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email, identifier } = req.body;
+    const targetEmail = (email || identifier || '').toLowerCase().trim();
+
+    if (!targetEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    const user = await User.findOne({ email: targetEmail });
+
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If an account exists, a password reset email has been sent.'
+      });
+    }
+
+    const resetToken = createSecureToken();
+    user.passwordResetTokenHash = hashToken(resetToken);
+    user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save();
+
+    try {
+      await sendPasswordResetEmail({
+        to: user.email,
+        name: user.name,
+        resetUrl: `${getAppUrl()}/reset-password/${resetToken}`,
+      });
+    } catch (emailError) {
+      console.error('Password reset email error:', emailError.message);
+    }
+
+    return res.json({
+      success: true,
+      message: 'If an account exists, a password reset email has been sent.'
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to send password reset email',
+      error: error.message
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token and new password are required'
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
+    const tokenHash = hashToken(token);
+    const user = await User.findOne({
+      passwordResetTokenHash: tokenHash,
+      passwordResetExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset link is invalid or has expired'
+      });
+    }
+
+    user.password = password;
+    user.passwordResetTokenHash = null;
+    user.passwordResetExpires = null;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Password reset successful'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
       error: error.message
     });
   }
@@ -287,6 +535,15 @@ const approveUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+    try {
+      await sendApprovalEmail({
+        to: user.email,
+        name: user.name,
+        loginUrl: `${getAppUrl()}/login`,
+      });
+    } catch (emailError) {
+      console.error('Approval email error:', emailError.message);
+    }
     res.json({ success: true, message: 'User approved successfully', user });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to approve user', error: error.message });
@@ -318,5 +575,9 @@ module.exports = {
   updateProfile,
   getPendingUsers,
   approveUser,
-  rejectUser
+  rejectUser,
+  verifyEmail,
+  resendVerificationEmail,
+  forgotPassword,
+  resetPassword
 };

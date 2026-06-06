@@ -20,9 +20,16 @@ export const logoutUser = async () => {
   // Client-side token removal only (API call removed in AuthContext)
 };
 
-// Password reset functions
-export const forgotPassword = (method, identifier) => {
-  return api.post(`${AUTH_URL}/forgot-password`, { method, identifier });
+export const verifyEmail = (token) => {
+  return api.get(`${AUTH_URL}/verify-email/${token}`);
+};
+
+export const resendVerificationEmail = (email) => {
+  return api.post(`${AUTH_URL}/resend-verification`, { email });
+};
+
+export const forgotPassword = (email) => {
+  return api.post(`${AUTH_URL}/forgot-password`, { email });
 };
 
 export const resetPassword = (token, password) => {

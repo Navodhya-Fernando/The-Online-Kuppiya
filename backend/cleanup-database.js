@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 const User = require('./models/User.model');
+const loadEnv = require('./config/env');
+
+loadEnv();
 
 // Connect to database
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/online-kuppiya')

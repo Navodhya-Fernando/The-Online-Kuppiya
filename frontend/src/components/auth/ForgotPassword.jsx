@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../../api/authApi';
 
 const ForgotPassword = () => {
-  const [recoveryMethod, setRecoveryMethod] = useState('email');
   const [identifier, setIdentifier] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,9 +14,9 @@ const ForgotPassword = () => {
     setMessage('');
 
     try {
-      await forgotPassword(recoveryMethod, identifier);
+      await forgotPassword(identifier);
       setLinkSent(true);
-      setMessage(`Recovery link sent successfully to your ${recoveryMethod === 'email' ? 'email' : 'WhatsApp'}`);
+      setMessage('Recovery link sent successfully to your email');
     } catch (error) {
       setMessage(error.response?.data?.message || 'Failed to send recovery link');
     } finally {
@@ -34,8 +33,7 @@ const ForgotPassword = () => {
           </div>
           <h2 className="text-2xl font-bold mb-4 text-primary">Recovery Link Sent</h2>
           <p className="text-secondary mb-8">
-            We've sent a password recovery link to your {recoveryMethod === 'email' ? 'email' : 'WhatsApp'}. 
-            Please check and follow the instructions to reset your password.
+            We've sent a password recovery link to your email. Please check your inbox and spam folder, then follow the instructions to reset your password.
           </p>
           <Link 
             to="/login" 
@@ -52,7 +50,7 @@ const ForgotPassword = () => {
     <div className="auth-form-container p-8 shadow-xl rounded-xl">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-primary mb-2">Reset Password</h2>
-        <p className="text-secondary text-sm">Choose your recovery method</p>
+        <p className="text-secondary text-sm">We will send the reset link to your account email</p>
       </div>
       
       {message && (
@@ -67,38 +65,10 @@ const ForgotPassword = () => {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Choose recovery method:
-          </label>
-          <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="email"
-                checked={recoveryMethod === 'email'}
-                onChange={(e) => setRecoveryMethod(e.target.value)}
-                className="mr-2"
-              />
-              Email Address
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="whatsapp"
-                checked={recoveryMethod === 'whatsapp'}
-                onChange={(e) => setRecoveryMethod(e.target.value)}
-                className="mr-2"
-              />
-              WhatsApp Number
-            </label>
-          </div>
-        </div>
-
         <input
           className="form-control"
-          type={recoveryMethod === 'email' ? 'email' : 'tel'}
-          placeholder={recoveryMethod === 'email' ? 'Enter your email address' : 'Enter your WhatsApp number'}
+          type="email"
+          placeholder="Enter your email address"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
           required

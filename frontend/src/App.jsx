@@ -1,6 +1,5 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom'; 
-import { useSettings } from './contexts/SettingsContext';
 
 import Header from './components/shared/Header.jsx'; 
 import Footer from './components/shared/Footer.jsx'; 
@@ -9,6 +8,7 @@ import AuthLogin from './pages/Auth/Login.jsx';
 import AuthRegister from './pages/Auth/Register.jsx'; 
 import ForgotPasswordPage from './pages/Auth/ForgotPassword.jsx';
 import ResetPasswordPage from './pages/Auth/ResetPassword.jsx';
+import VerifyEmailPage from './pages/Auth/VerifyEmail.jsx';
 import Home from './pages/Home.jsx';
 
 // Forum Pages
@@ -26,8 +26,6 @@ import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
 
 
 function App() {
-  const { isDarkMode } = useSettings();
-  
   return (
     <div className="app-container">
       
@@ -42,6 +40,7 @@ function App() {
           <Route path="/login" element={<AuthLogin />} />
           <Route path="/register" element={<AuthRegister />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
           {/* Q&A Forum Routes */}

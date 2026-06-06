@@ -3,7 +3,6 @@
   "private": true,
   "version": "1.0.0",
   "description": "Frontend for The Online Kuppiya - A unified platform for Sri Lankan university students",
-  "homepage": "https://Navodhya-Fernando.github.io/The-Online-Kuppiya",
   "type": "module",
   "license": "ISC",
   "author": "Navodhya Fernando",
@@ -11,9 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@sentry/react": "^10.19.0",

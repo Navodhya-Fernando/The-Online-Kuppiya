@@ -3,12 +3,16 @@
 const express = require('express');
 const router = express.Router();
 // FIX: Ensure all controller functions are imported
-const { register, login, profile, updateProfile, getPendingUsers, approveUser, rejectUser } = require('../controllers/auth.controller');
+const { register, login, profile, updateProfile, getPendingUsers, approveUser, rejectUser, verifyEmail, resendVerificationEmail, forgotPassword, resetPassword } = require('../controllers/auth.controller');
 const { authenticateToken, requireAdmin } = require('../middleware/auth.middleware');
 
 // Public routes
 router.post('/register', register);
 router.post('/login', login);
+router.get('/verify-email/:token', verifyEmail);
+router.post('/resend-verification', resendVerificationEmail);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password/:token', resetPassword);
 
 // Protected routes
 router.get('/profile', authenticateToken, profile);
