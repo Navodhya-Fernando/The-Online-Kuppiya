@@ -76,11 +76,6 @@ const Header = () => {
     { to: "/leaderboard", text: "Leaderboard", icon: LeaderboardIcon },
   ];
 
-  // Add admin console if user is admin
-  if (isAuthenticated && user?.role === 'admin') {
-    navItems.push({ to: "/admin", text: "Admin Console", icon: AdminIcon });
-  }
-
   const userInitials = user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 
   return (

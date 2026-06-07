@@ -36,3 +36,6 @@ export const verifyAnswer = (questionId, answerId) => {
   // Toggles the verified status of an answer
   return api.patch(`${QUESTION_URL}/${questionId}/answers/${answerId}/verify`);
 };
+
+export const deleteQuestion = (id) => axios.delete(`/api/questions/${id}`);
+export const deleteAnswer = (answerId) => axios.delete(`/api/questions/answers/${answerId}`);
