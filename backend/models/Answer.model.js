@@ -15,6 +15,7 @@ const answerSchema = new mongoose.Schema({
   upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   downvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   isAccepted: { type: Boolean, default: false },
+  verifiedByInstructor: { type: Boolean, default: false }, // <-- New Field
   status: { 
     type: String, 
     enum: ['active', 'deleted'], 
@@ -63,6 +64,13 @@ answerSchema.methods.downvote = function(userId) {
     this.downvotes.splice(downvoteIndex, 1);
   }
   
+  return this.save();
+};
+
+// Add method to easily mark as accepted (called from controller)
+answerSchema.methods.markAsAccepted = function() {
+  this.isAccepted = true;
+  this.acceptedAt = new Date();
   return this.save();
 };
 

@@ -7,7 +7,6 @@ const createQuestion = async (req, res) => {
   try {
     const { title, body, courseCode, tags } = req.body;
 
-    // Validate required fields
     if (!title || !body || !courseCode) {
       return res.status(400).json({
         success: false,
@@ -15,10 +14,8 @@ const createQuestion = async (req, res) => {
       });
     }
 
-    // Use _id instead of id for consistency
     const userId = req.user._id || req.user.id;
 
-    // Process tags - handle both array and string inputs
     let processedTags = [];
     if (tags) {
       if (Array.isArray(tags)) {
@@ -28,7 +25,6 @@ const createQuestion = async (req, res) => {
       }
     }
 
-    // Create question
     const question = new Question({
       title: title.trim(),
       body: body.trim(),
@@ -38,11 +34,7 @@ const createQuestion = async (req, res) => {
     });
 
     await question.save();
-
-    // Award credits to question author
     await User.findByIdAndUpdate(userId, { $inc: { credits: 5, reputation: 2 } });
-
-    // Populate author info
     await question.populate('authorId', 'name university degree');
 
     res.status(201).json({
@@ -92,18 +84,11 @@ const getAllQuestions = async (req, res) => {
 
     let sortOption = {};
     switch (sortBy) {
-      case 'oldest':
-        sortOption = { createdAt: 1 };
-        break;
-      case 'views':
-        sortOption = { viewCount: -1 };
-        break;
-      case 'answers':
-        sortOption = { answerCount: -1 };
-        break;
+      case 'oldest': sortOption = { createdAt: 1 }; break;
+      case 'views': sortOption = { viewCount: -1 }; break;
+      case 'answers': sortOption = { answerCount: -1 }; break;
       case 'newest':
-      default:
-        sortOption = { createdAt: -1 };
+      default: sortOption = { createdAt: -1 };
     }
 
     const questions = await Question.find(filter)
@@ -113,7 +98,6 @@ const getAllQuestions = async (req, res) => {
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit));
 
-    // Sort by vote score if requested
     if (sortBy === 'votes') {
       questions.sort((a, b) => b.voteScore - a.voteScore);
     }
@@ -148,20 +132,15 @@ const getQuestionById = async (req, res) => {
       .populate('authorId', 'name university degree reputation');
 
     if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
+      return res.status(404).json({ success: false, message: 'Question not found' });
     }
 
-    // Increment view count
     question.viewCount += 1;
     await question.save();
 
-    // Get answers for this question  
     const answers = await Answer.find({ questionId: question._id })
-      .populate('authorId', 'name university degree reputation')
-      .sort({ isAccepted: -1, createdAt: -1 });
+      .populate('authorId', 'name university degree reputation role')
+      .sort({ verifiedByInstructor: -1, isAccepted: -1, createdAt: -1 });
 
     res.json({
       success: true,
@@ -181,28 +160,15 @@ const getQuestionById = async (req, res) => {
 // Vote on Question
 const voteQuestion = async (req, res) => {
   try {
-    const { voteType } = req.body; // 'up' or 'down'
+    const { voteType } = req.body;
     const question = await Question.findById(req.params.id);
     
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
-    }
+    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
 
-    if (voteType === 'up') {
-      await question.upvote(req.user.id);
-    } else if (voteType === 'down') {
-      await question.downvote(req.user.id);
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid vote type. Use "up" or "down"'
-      });
-    }
+    if (voteType === 'up') await question.upvote(req.user.id);
+    else if (voteType === 'down') await question.downvote(req.user.id);
+    else return res.status(400).json({ success: false, message: 'Invalid vote type. Use "up" or "down"' });
 
-    // Update author reputation
     await User.findByIdAndUpdate(question.authorId, {
       $inc: { reputation: voteType === 'up' ? 1 : -1 }
     });
@@ -216,11 +182,7 @@ const voteQuestion = async (req, res) => {
     });
   } catch (error) {
     console.error('Vote question error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to vote',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Failed to vote', error: error.message });
   }
 };
 
@@ -228,39 +190,19 @@ const voteQuestion = async (req, res) => {
 const deleteQuestion = async (req, res) => {
   try {
     const question = await Question.findById(req.params.id);
-    
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
-    }
+    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
 
-    // Check if user owns the question or is admin
     if (question.authorId.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete this question'
-      });
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this question' });
     }
 
-    // Delete all answers for this question
     await Answer.deleteMany({ questionId: question._id });
-
-    // Delete the question
     await Question.findByIdAndDelete(req.params.id);
 
-    res.json({
-      success: true,
-      message: 'Question deleted successfully'
-    });
+    res.json({ success: true, message: 'Question deleted successfully' });
   } catch (error) {
     console.error('Delete question error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete question',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Failed to delete question', error: error.message });
   }
 };
 
@@ -270,27 +212,13 @@ const createAnswer = async (req, res) => {
     const { content } = req.body;
     const questionId = req.params.id;
 
-    // Validate required fields
-    if (!content) {
-      return res.status(400).json({
-        success: false,
-        message: 'Content is required'
-      });
-    }
+    if (!content) return res.status(400).json({ success: false, message: 'Content is required' });
 
-    // Check if question exists
     const question = await Question.findById(questionId);
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
-    }
+    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
 
-    // Use consistent user ID reference
     const userId = req.user._id || req.user.id;
 
-    // Create answer
     const answer = new Answer({
       content: content.trim(),
       questionId,
@@ -299,15 +227,11 @@ const createAnswer = async (req, res) => {
 
     await answer.save();
 
-    // Update question answer count
     question.answerCount += 1;
     await question.save();
 
-    // Award credits to answer author
     await User.findByIdAndUpdate(userId, { $inc: { credits: 3, reputation: 1 } });
-
-    // Populate author info
-    await answer.populate('authorId', 'name university degree reputation');
+    await answer.populate('authorId', 'name university degree reputation role');
 
     res.status(201).json({
       success: true,
@@ -316,39 +240,22 @@ const createAnswer = async (req, res) => {
     });
   } catch (error) {
     console.error('Create answer error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create answer',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Failed to create answer', error: error.message });
   }
 };
 
 // Vote on Answer
 const voteAnswer = async (req, res) => {
   try {
-    const { voteType } = req.body; // 'up' or 'down'
+    const { voteType } = req.body;
     const answer = await Answer.findById(req.params.answerId);
     
-    if (!answer) {
-      return res.status(404).json({
-        success: false,
-        message: 'Answer not found'
-      });
-    }
+    if (!answer) return res.status(404).json({ success: false, message: 'Answer not found' });
 
-    if (voteType === 'up') {
-      await answer.upvote(req.user.id);
-    } else if (voteType === 'down') {
-      await answer.downvote(req.user.id);
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid vote type. Use "up" or "down"'
-      });
-    }
+    if (voteType === 'up') await answer.upvote(req.user.id);
+    else if (voteType === 'down') await answer.downvote(req.user.id);
+    else return res.status(400).json({ success: false, message: 'Invalid vote type. Use "up" or "down"' });
 
-    // Update author reputation
     await User.findByIdAndUpdate(answer.authorId, {
       $inc: { reputation: voteType === 'up' ? 1 : -1 }
     });
@@ -362,44 +269,23 @@ const voteAnswer = async (req, res) => {
     });
   } catch (error) {
     console.error('Vote answer error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to vote',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Failed to vote', error: error.message });
   }
 };
 
-// Accept Answer
+// Accept Answer (By Student Author)
 const acceptAnswer = async (req, res) => {
   try {
     const answer = await Answer.findById(req.params.answerId);
-    
-    if (!answer) {
-      return res.status(404).json({
-        success: false,
-        message: 'Answer not found'
-      });
-    }
+    if (!answer) return res.status(404).json({ success: false, message: 'Answer not found' });
 
     const question = await Question.findById(answer.questionId);
-    
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
-    }
+    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
 
-    // Check if user owns the question
     if (question.authorId.toString() !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'Only question author can accept answers'
-      });
+      return res.status(403).json({ success: false, message: 'Only question author can accept answers' });
     }
 
-    // Unmark previous accepted answer if exists
     if (question.acceptedAnswerId) {
       await Answer.findByIdAndUpdate(question.acceptedAnswerId, { 
         isAccepted: false,
@@ -407,31 +293,18 @@ const acceptAnswer = async (req, res) => {
       });
     }
 
-    // Mark this answer as accepted
     await answer.markAsAccepted();
 
-    // Update question
     question.acceptedAnswerId = answer._id;
     question.status = 'answered';
     await question.save();
 
-    // Award bonus credits to answer author
-    await User.findByIdAndUpdate(answer.authorId, { 
-      $inc: { credits: 15, reputation: 10 }
-    });
+    await User.findByIdAndUpdate(answer.authorId, { $inc: { credits: 15, reputation: 10 } });
 
-    res.json({
-      success: true,
-      message: 'Answer accepted successfully',
-      answer
-    });
+    res.json({ success: true, message: 'Answer accepted successfully', answer });
   } catch (error) {
     console.error('Accept answer error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to accept answer',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Failed to accept answer', error: error.message });
   }
 };
 
@@ -439,50 +312,67 @@ const acceptAnswer = async (req, res) => {
 const deleteAnswer = async (req, res) => {
   try {
     const answer = await Answer.findById(req.params.answerId);
-    
-    if (!answer) {
-      return res.status(404).json({
-        success: false,
-        message: 'Answer not found'
-      });
-    }
+    if (!answer) return res.status(404).json({ success: false, message: 'Answer not found' });
 
-    // Check if user owns the answer or is admin
     if (answer.authorId.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete this answer'
-      });
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this answer' });
     }
 
     const question = await Question.findById(answer.questionId);
-    
     if (question) {
-      // Update question answer count
       question.answerCount = Math.max(0, question.answerCount - 1);
-      
-      // If this was the accepted answer, update question status
       if (question.acceptedAnswerId && question.acceptedAnswerId.toString() === answer._id.toString()) {
         question.acceptedAnswerId = null;
         question.status = question.answerCount > 0 ? 'open' : 'open';
       }
-      
       await question.save();
     }
 
     await Answer.findByIdAndDelete(req.params.answerId);
-
-    res.json({
-      success: true,
-      message: 'Answer deleted successfully'
-    });
+    res.json({ success: true, message: 'Answer deleted successfully' });
   } catch (error) {
     console.error('Delete answer error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete answer',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Failed to delete answer', error: error.message });
+  }
+};
+
+// --- NEW: Verify Answer (TA / Instructor Only) ---
+const verifyAnswer = async (req, res, next) => {
+  try {
+      const { questionId, answerId } = req.params;
+
+      // Ensure the user is an instructor or admin
+      if (req.user.role !== 'instructor' && req.user.role !== 'admin') {
+          return res.status(403).json({ success: false, message: 'Only instructors can verify answers.' });
+      }
+
+      const answer = await Answer.findById(answerId);
+      if (!answer) {
+          return res.status(404).json({ success: false, message: 'Answer not found' });
+      }
+
+      // Ensure the answer belongs to the correct question
+      if (answer.questionId.toString() !== questionId) {
+          return res.status(400).json({ success: false, message: 'Answer does not belong to this question' });
+      }
+
+      // Toggle the verification status
+      answer.verifiedByInstructor = !answer.verifiedByInstructor;
+      await answer.save();
+
+      // Bonus: Reward the user whose answer was verified by a TA
+      if (answer.verifiedByInstructor) {
+         await User.findByIdAndUpdate(answer.authorId, { $inc: { reputation: 15, credits: 20 } });
+      }
+
+      res.status(200).json({
+          success: true,
+          message: answer.verifiedByInstructor ? 'Answer verified successfully' : 'Verification removed',
+          verifiedByInstructor: answer.verifiedByInstructor
+      });
+  } catch (error) {
+      console.error('Verify answer error:', error);
+      res.status(500).json({ success: false, message: 'Failed to verify answer', error: error.message });
   }
 };
 
@@ -495,5 +385,6 @@ module.exports = {
   createAnswer,
   voteAnswer,
   acceptAnswer,
-  deleteAnswer
+  deleteAnswer,
+  verifyAnswer // <-- Exported here
 };

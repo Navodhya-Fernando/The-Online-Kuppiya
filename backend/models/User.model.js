@@ -10,14 +10,20 @@ const userSchema = new mongoose.Schema({
     year: { type: Number, required: true, min: 1, max: 6 },
     credits: { type: Number, default: 50, min: 0 },
     reputation: { type: Number, default: 0, min: 0 },
-    role: { type: String, enum: ['student', 'admin'], default: 'student' },
+    role: { type: String, enum: ['student', 'admin', 'instructor'], default: 'student' },
     isApproved: { type: Boolean, default: false },
-  emailVerified: { type: Boolean, default: false },
-  emailVerifiedAt: { type: Date, default: null },
-  emailVerificationTokenHash: { type: String, default: null },
-  emailVerificationExpires: { type: Date, default: null },
-  passwordResetTokenHash: { type: String, default: null },
-  passwordResetExpires: { type: Date, default: null },
+    emailVerified: { type: Boolean, default: false },
+    // NEW: Array to store unlocked achievements
+    achievements: [{
+        title: String,
+        icon: String,
+        unlockedAt: { type: Date, default: Date.now }
+    }],
+    emailVerifiedAt: { type: Date, default: null },
+    emailVerificationTokenHash: { type: String, default: null },
+    emailVerificationExpires: { type: Date, default: null },
+    passwordResetTokenHash: { type: String, default: null },
+    passwordResetExpires: { type: Date, default: null },
     avatar: { type: String, default: '👤' },
     bio: { type: String, default: '', maxlength: 500 },
     joinedAt: { type: Date, default: Date.now }

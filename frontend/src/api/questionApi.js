@@ -30,3 +30,9 @@ export const postNewAnswer = (questionId, answerData) => {
   // answerData should contain { content }
   return api.post(`${QUESTION_URL}/${questionId}/answers`, answerData);
 };
+
+// --- Verification (Instructor/Admin Only) ---
+export const verifyAnswer = (questionId, answerId) => {
+  // Toggles the verified status of an answer
+  return api.patch(`${QUESTION_URL}/${questionId}/answers/${answerId}/verify`);
+};

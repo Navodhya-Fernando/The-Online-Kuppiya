@@ -9,7 +9,8 @@ const {
   createAnswer,
   voteAnswer,
   acceptAnswer,
-  deleteAnswer
+  deleteAnswer,
+  verifyAnswer // <-- Imported here
 } = require('../controllers/question.controller');
 const { authenticateToken } = require('../middleware/auth.middleware');
 
@@ -27,5 +28,8 @@ router.post('/:id/answers', authenticateToken, createAnswer);
 router.post('/answers/:answerId/vote', authenticateToken, voteAnswer);
 router.post('/answers/:answerId/accept', authenticateToken, acceptAnswer);
 router.delete('/answers/:answerId', authenticateToken, deleteAnswer);
+
+// Protected route - Instructor Verification
+router.patch('/:questionId/answers/:answerId/verify', authenticateToken, verifyAnswer);
 
 module.exports = router;

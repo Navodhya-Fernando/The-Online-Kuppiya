@@ -1,31 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { fetchQuestionDetails, postNewAnswer, voteQuestion, voteAnswer } from '../../api/questionApi';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { fetchQuestionDetails, postNewAnswer, voteQuestion, voteAnswer, verifyAnswer } from '../../api/questionApi';
 import useApi from '../../hooks/useApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { Spinner } from '../../components/shared/Spinner';
+import RichTextRenderer from '../../components/shared/RichTextRenderer';
 import { formatDistanceToNow } from 'date-fns';
 
-const CheckCircleIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-    </svg>
-);
-
-const ThumbsUpIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.398.83 1.169 1.398 2.02 1.398h.718c.728 0 1.428-.301 1.936-.837l.361-.381c.376-.395.923-.621 1.48-.621a2.25 2.25 0 1 1 0 4.5H9.117c-.889 0-1.713-.518-2.118-1.336L5.904 18.5Z" />
-    </svg>
-);
-
-const ThumbsDownIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M7.498 15.25H4.372c-1.026 0-1.945-.694-2.054-1.715a12.137 12.137 0 0 1-.068-1.285c0-2.848.992-5.464 2.649-7.521C5.287 4.247 5.886 4 6.504 4h4.016a4.5 4.5 0 0 1 1.423.23l3.114 1.04a4.5 4.5 0 0 0 1.423.23h1.294M7.498 15.25c.618 0 .991.724.725 1.282A7.471 7.471 0 0 0 7.5 19.75 2.25 2.25 0 0 0 9.75 22a.75.75 0 0 0 .75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 0 0 2.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384m-10.253 1.5H9.7m8.075-9.75c.ter.83-1.169 1.398-2.02 1.398h-.718c-.728 0-1.428.301-1.936.837l-.361.381c-.376.395-.923.621-1.48.621a2.25 2.25 0 1 1 0-4.5h3.632c.889 0 1.713.518 2.118 1.336L18.096 5.5Z" />
-    </svg>
-);
+// --- Modern Inline Icons ---
+const Icons = {
+    ArrowLeft: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>,
+    CheckCircle: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    ShieldCheck: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+    Shield: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
+    Upvote: ({ active }) => <svg className={`w-7 h-7 ${active ? 'text-blue-500 fill-blue-100 dark:fill-blue-900/30' : 'text-gray-400 hover:text-blue-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>,
+    Downvote: ({ active }) => <svg className={`w-7 h-7 ${active ? 'text-red-500 fill-red-100 dark:fill-red-900/30' : 'text-gray-400 hover:text-red-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>,
+    MessageSquare: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
+};
 
 const QuestionDetails = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const { isAuthenticated, user } = useAuth();
     const { data, loading, error, execute: loadQuestion } = useApi(fetchQuestionDetails);
 
@@ -33,6 +28,7 @@ const QuestionDetails = () => {
     const { loading: answerLoading, error: answerError, execute: submitAnswer } = useApi(postNewAnswer);
     const { execute: voteOnQuestion } = useApi(voteQuestion);
     const { execute: voteOnAnswer } = useApi(voteAnswer);
+    const { execute: toggleVerifyAnswer } = useApi(verifyAnswer);
 
     useEffect(() => {
         if (id) {
@@ -48,154 +44,285 @@ const QuestionDetails = () => {
         
         if (!answerError) {
             setAnswerBody('');
-            loadQuestion(id); // Re-fetch to show the new answer
+            loadQuestion(id); 
         }
     };
 
     const handleQuestionVote = async (voteType) => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated) return navigate('/login');
         try {
             await voteOnQuestion(id, voteType);
-            loadQuestion(id); // Re-fetch to update vote counts
+            loadQuestion(id);
         } catch (error) {
             console.error('Vote failed:', error);
-            // Still refresh to show current state
-            loadQuestion(id);
         }
     };
 
     const handleAnswerVote = async (answerId, voteType) => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated) return navigate('/login');
         try {
             await voteOnAnswer(answerId, voteType);
-            loadQuestion(id); // Re-fetch to update vote counts
+            loadQuestion(id);
         } catch (error) {
             console.error('Vote failed:', error);
-            // Still refresh to show current state
-            loadQuestion(id);
         }
     };
 
-    if (loading) return <div className="loading-spinner-container"><Spinner /></div>;
-    if (error) return <div className="no-results-message"><h3>Error loading question.</h3><p>The requested question could not be found or the connection failed.</p></div>;
-    if (!data) return <div className="no-results-message"><h3>Question not found.</h3></div>;
+    // --- TA/Instructor Verification Logic ---
+    const handleVerify = async (answerId) => {
+        if (!isAuthenticated || (user?.role !== 'instructor' && user?.role !== 'admin')) return;
+        try {
+            await toggleVerifyAnswer(id, answerId);
+            loadQuestion(id);
+        } catch (error) {
+            console.error('Verification failed:', error);
+        }
+    };
+
+    if (loading) return (
+        <div className="min-h-screen bg-gray-50 dark:bg-bg-primary-dark flex flex-col items-center justify-center">
+            <Spinner />
+            <p className="mt-4 text-gray-500 font-medium animate-pulse">Loading thread...</p>
+        </div>
+    );
+
+    if (error || !data) return (
+        <div className="min-h-screen bg-gray-50 dark:bg-bg-primary-dark flex flex-col items-center justify-center p-4">
+            <div className="text-6xl mb-4">🛸</div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Thread not found</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">This question might have been removed or the link is broken.</p>
+            <Link to="/questions" className="text-blue-600 hover:underline flex items-center gap-2 font-medium">
+                <Icons.ArrowLeft /> Back to Discussions
+            </Link>
+        </div>
+    );
 
     const { question, answers } = data;
+    const qScore = (question.upvotes?.length || 0) - (question.downvotes?.length || 0);
+    
+    // Check if the current logged-in user is staff
+    const isStaff = user?.role === 'instructor' || user?.role === 'admin';
 
     return (
-        <div className="question-details-page">
-            <div className="container">
-                <div className="question-details-card">
-                    <div className="question-header">
-                        <h1 className="question-title">{question.title}</h1>
-                        <div className="question-meta">
-                            {question.courseCode && <span className="tag-modern">{question.courseCode}</span>}
-                            {question.tags?.map((tag, index) => (
-                                <span key={index} className="tag-modern">{tag}</span>
-                            ))}
-                        </div>
-                    </div>
+        <div className="min-h-screen bg-gray-50 dark:bg-bg-primary-dark text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8">
+                
+                {/* --- CENTER FEED: Question & Answers --- */}
+                <main className="flex-1 min-w-0 flex flex-col gap-8">
                     
-                    <div className="question-content">
-                        <p className="question-body-text">{question.body}</p>
-                    </div>
-                    
-                    <div className="question-footer">
-                        <div className="question-voting">
-                            {isAuthenticated && (
-                                <div className="vote-controls">
-                                    <button 
-                                        onClick={() => handleQuestionVote('up')}
-                                        className={`vote-btn vote-up ${question.upvotes?.includes(user?._id) ? 'active' : ''}`}
-                                    >
-                                        👍 {question.upvotes?.length || 0}
-                                    </button>
-                                    <button 
-                                        onClick={() => handleQuestionVote('down')}
-                                        className={`vote-btn vote-down ${question.downvotes?.includes(user?._id) ? 'active' : ''}`}
-                                    >
-                                        👎 {question.downvotes?.length || 0}
-                                    </button>
-                                </div>
-                            )}
-                            <div className="rating-display">
-                                Rating: {(question.upvotes?.length || 0) - (question.downvotes?.length || 0)}
+                    <div>
+                        <Link to="/questions" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors mb-4">
+                            <Icons.ArrowLeft /> Back to all questions
+                        </Link>
+                        
+                        <div className="pb-6 border-b border-gray-200 dark:border-border-default">
+                            <h1 className="text-3xl sm:text-4xl font-bold leading-tight mb-4">{question.title}</h1>
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                                <span>Asked {formatDistanceToNow(new Date(question.createdAt), { addSuffix: true })}</span>
+                                <span>•</span>
+                                <span>Viewed {question.viewCount || 0} times</span>
                             </div>
                         </div>
-                        <div className="question-author-info">
-                            Asked by <span className="author-name">{question.authorId?.name || 'Anonymous'}</span>
-                            <span className="separator">•</span>
-                            <span className="timestamp">{formatDistanceToNow(new Date(question.createdAt), { addSuffix: true })}</span>
-                        </div>
                     </div>
-                </div>
 
-                <div className="answers-section">
-                    <h2 className="answers-title">{answers.length} Answers</h2>
-                    <div className="answers-list">
-                        {answers.map(answer => (
-                            <div key={answer._id} className={`answer-card-modern ${answer.isAccepted ? 'accepted' : ''}`}>
-                                <div className="answer-header-modern">
-                                    <div className="answer-author-info">
-                                        <span className="answer-author">Answered by <span className="author-name">{answer.authorId?.name || 'Anonymous'}</span></span>
-                                        <span className="answer-timestamp">{formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}</span>
-                                    </div>
-                                    {answer.isAccepted && (
-                                        <div className="accepted-badge-modern">
-                                            <CheckCircleIcon />
-                                            <span>Accepted Answer</span>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="answer-content">
-                                    <p className="answer-text">{answer.content}</p>
-                                </div>
-                                <div className="answer-footer-modern">
-                                    <div className="answer-voting">
-                                        {isAuthenticated && (
-                                            <div className="vote-controls">
-                                                <button 
-                                                    onClick={() => handleAnswerVote(answer._id, 'up')}
-                                                    className={`vote-btn vote-up ${answer.upvotes?.includes(user?._id) ? 'active' : ''}`}
-                                                >
-                                                    👍 {answer.upvotes?.length || 0}
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleAnswerVote(answer._id, 'down')}
-                                                    className={`vote-btn vote-down ${answer.downvotes?.includes(user?._id) ? 'active' : ''}`}
-                                                >
-                                                    👎 {answer.downvotes?.length || 0}
-                                                </button>
-                                            </div>
-                                        )}
-                                        <div className="rating-display">
-                                            Rating: {(answer.upvotes?.length || 0) - (answer.downvotes?.length || 0)}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {isAuthenticated && (
-                    <div className="answer-form-section">
-                        <h3 className="answer-form-title">Your Answer</h3>
-                        <form onSubmit={handleAnswerSubmit} className="answer-form-modern">
-                            <textarea
-                                className="answer-input"
-                                value={answerBody}
-                                onChange={(e) => setAnswerBody(e.target.value)}
-                                placeholder="Share your knowledge..."
-                                required
-                            />
-                            {answerError && <div className="error-alert">{answerError.message || 'Failed to post answer.'}</div>}
-                            <button type="submit" className="btn-primary" disabled={answerLoading}>
-                                {answerLoading ? <Spinner size="sm" /> : 'Post Answer'}
+                    <div className="flex gap-4 sm:gap-6">
+                        {/* Voting Column */}
+                        <div className="flex flex-col items-center gap-2 shrink-0 pt-2">
+                            <button onClick={() => handleQuestionVote('up')} className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-bg-tertiary-dark transition-colors">
+                                <Icons.Upvote active={question.upvotes?.includes(user?._id)} />
                             </button>
-                        </form>
+                            <span className={`text-xl font-bold ${qScore > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                                {qScore}
+                            </span>
+                            <button onClick={() => handleQuestionVote('down')} className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-bg-tertiary-dark transition-colors">
+                                <Icons.Downvote active={question.downvotes?.includes(user?._id)} />
+                            </button>
+                        </div>
+
+                        {/* Content Body */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-6">
+                                {question.courseCode && (
+                                    <span className="px-3 py-1 text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-md">
+                                        {question.courseCode}
+                                    </span>
+                                )}
+                                {question.tags?.map((tag, index) => (
+                                    <span key={index} className="px-3 py-1 text-xs font-medium bg-gray-100 dark:bg-bg-tertiary-dark text-gray-600 dark:text-gray-300 rounded-md">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+
+                            {/* Using the new RichTextRenderer */}
+                            <div className="mb-8">
+                                <RichTextRenderer content={question.body} />
+                            </div>
+
+                            <div className="flex justify-end">
+                                <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-4 min-w-[200px] border border-blue-100 dark:border-blue-900/30">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Asked by</p>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                                            {(question.authorId?.name || 'A')[0].toUpperCase()}
+                                        </div>
+                                        <div className="font-medium text-blue-900 dark:text-blue-100">
+                                            {question.authorId?.name || 'Anonymous'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                )}
+
+                    {/* Answers Section */}
+                    <div className="mt-8 pt-8 border-t border-gray-200 dark:border-border-default">
+                        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                            {answers.length} {answers.length === 1 ? 'Answer' : 'Answers'}
+                        </h2>
+
+                        <div className="space-y-8">
+                            {/* Sort answers so verified ones float to the top naturally */}
+                            {[...answers].sort((a, b) => (b.verifiedByInstructor ? 1 : 0) - (a.verifiedByInstructor ? 1 : 0)).map(answer => {
+                                const aScore = (answer.upvotes?.length || 0) - (answer.downvotes?.length || 0);
+                                const isVerified = answer.verifiedByInstructor; // New backend property
+
+                                return (
+                                    <div 
+                                        key={answer._id} 
+                                        className={`flex gap-4 sm:gap-6 p-6 rounded-2xl border transition-all ${
+                                            isVerified 
+                                            ? 'bg-green-50/50 dark:bg-green-900/10 border-green-300 dark:border-green-800 shadow-sm ring-1 ring-green-500/20' 
+                                            : 'bg-white dark:bg-bg-secondary-dark border-gray-200 dark:border-border-default shadow-sm'
+                                        }`}
+                                    >
+                                        {/* Answer Voting */}
+                                        <div className="flex flex-col items-center gap-2 shrink-0">
+                                            <button onClick={() => handleAnswerVote(answer._id, 'up')} className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-bg-tertiary-dark transition-colors">
+                                                <Icons.Upvote active={answer.upvotes?.includes(user?._id)} />
+                                            </button>
+                                            <span className={`text-xl font-bold ${aScore > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                {aScore}
+                                            </span>
+                                            <button onClick={() => handleAnswerVote(answer._id, 'down')} className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-bg-tertiary-dark transition-colors">
+                                                <Icons.Downvote active={answer.downvotes?.includes(user?._id)} />
+                                            </button>
+                                        </div>
+
+                                        {/* Answer Body */}
+                                        <div className="flex-1 min-w-0 flex flex-col">
+                                            
+                                            {/* Verification Badge & TA Controls */}
+                                            <div className="flex items-center gap-3 mb-4">
+                                                {isVerified && (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40 rounded-full shadow-sm">
+                                                        <Icons.ShieldCheck /> Instructor Verified
+                                                    </span>
+                                                )}
+                                                
+                                                {/* TA Toggle Button */}
+                                                {isStaff && !isVerified && (
+                                                    <button 
+                                                        onClick={() => handleVerify(answer._id)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-green-100 hover:text-green-700 dark:bg-bg-tertiary-dark dark:text-gray-300 dark:hover:bg-green-900/40 dark:hover:text-green-400 rounded-full transition-colors border border-dashed border-gray-300 dark:border-gray-600 hover:border-solid hover:border-green-300 dark:hover:border-green-700"
+                                                    >
+                                                        <Icons.Shield /> Mark as Verified
+                                                    </button>
+                                                )}
+                                                {isStaff && isVerified && (
+                                                    <button 
+                                                        onClick={() => handleVerify(answer._id)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                                    >
+                                                        Un-verify
+                                                    </button>
+                                                )}
+                                            </div>
+                                            
+                                            <div className="flex-1 mb-6">
+                                                <RichTextRenderer content={answer.content} />
+                                            </div>
+                                            
+                                            <div className="flex justify-end mt-auto">
+                                                <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                                                    <span>Answered {formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })} by</span>
+                                                    <span className={`font-semibold ${answer.authorId?.role === 'instructor' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                                                        {answer.authorId?.name || 'Anonymous'}
+                                                        {answer.authorId?.role === 'instructor' && ' (Staff)'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Compose Answer Form */}
+                    <div className="mt-8 pt-8 border-t border-gray-200 dark:border-border-default pb-16">
+                        <h3 className="text-xl font-bold mb-4">Your Answer</h3>
+                        {isAuthenticated ? (
+                            <form onSubmit={handleAnswerSubmit} className="bg-white dark:bg-bg-secondary-dark border border-gray-200 dark:border-border-default rounded-2xl shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500 transition-all">
+                                <textarea
+                                    className="w-full min-h-[200px] p-6 bg-transparent outline-none resize-y text-gray-900 dark:text-gray-100 placeholder-gray-400 font-mono text-sm"
+                                    value={answerBody}
+                                    onChange={(e) => setAnswerBody(e.target.value)}
+                                    placeholder="Write your explanation here. Use ``` for code blocks and $$ for math formulas..."
+                                    required
+                                />
+                                <div className="bg-gray-50 dark:bg-bg-tertiary-dark border-t border-gray-200 dark:border-border-default px-4 py-3 flex items-center justify-between">
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">Markdown & LaTeX supported. Be polite and clearly explain your logic.</span>
+                                    <button 
+                                        type="submit" 
+                                        disabled={answerLoading || !answerBody.trim()}
+                                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
+                                    >
+                                        {answerLoading && <Spinner size="sm" />}
+                                        Post Answer
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/50 rounded-2xl p-6 text-center">
+                                <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">Join the Discussion</h4>
+                                <p className="text-blue-700 dark:text-blue-300 mb-4">You need to log in to post an answer and help your peers.</p>
+                                <Link to="/login" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors">
+                                    Log In to Answer
+                                </Link>
+                            </div>
+                        )}
+                        {answerError && (
+                            <div className="mt-4 text-red-500 text-sm font-medium bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-900/50">
+                                ⚠️ {answerError.message || 'Failed to post answer. Please try again.'}
+                            </div>
+                        )}
+                    </div>
+                </main>
+
+                {/* --- RIGHT RAIL: Thread Context --- */}
+                <aside className="hidden lg:flex flex-col w-72 shrink-0 space-y-6">
+                    <div className="bg-white dark:bg-bg-secondary-dark rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-border-default">
+                        <h3 className="font-bold text-gray-900 dark:text-white mb-4">Thread Status</h3>
+                        <ul className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                            <li className="flex justify-between">
+                                <span>Status:</span>
+                                <span className={answers.some(a => a.verifiedByInstructor) ? 'text-green-600 dark:text-green-400 font-bold' : 'text-yellow-600 dark:text-yellow-400 font-bold'}>
+                                    {answers.some(a => a.verifiedByInstructor) ? 'Resolved' : 'Active'}
+                                </span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Answers:</span>
+                                <span className="font-medium">{answers.length}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span>Views:</span>
+                                <span className="font-medium">{question.viewCount || 0}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+
             </div>
         </div>
     );
