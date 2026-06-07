@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchAllQuestions } from '../api/questionApi';
 import { getLeaderboard } from '../api/leaderboardApi';
-import { SettingsProvider } from './contexts/SettingsContext';
+import { SettingsProvider } from "./contexts/SettingsContext";
 import { formatDistanceToNow } from 'date-fns';
 
 // --- Modern Inline Icons ---
